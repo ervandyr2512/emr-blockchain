@@ -1,21 +1,27 @@
 {
-  "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-  "network": "localhost",
-  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-  "deployedAt": "2026-04-16T00:00:00.000Z",
-  "_note": "This is a placeholder. Run 'npx hardhat run scripts/deploy.js --network localhost' to overwrite with your deployed address.",
+  "address": "0xa328d54d623025b96F91eB654F2A77668cd6EC4c",
   "abi": [
-    {
-      "inputs": [],
-      "stateMutability": "nonpayable",
-      "type": "constructor"
-    },
     {
       "anonymous": false,
       "inputs": [
-        { "indexed": true,  "internalType": "address", "name": "patient",   "type": "address" },
-        { "indexed": true,  "internalType": "address", "name": "doctor",    "type": "address" },
-        { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "patient",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "doctor",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
       ],
       "name": "AccessGranted",
       "type": "event"
@@ -23,9 +29,24 @@
     {
       "anonymous": false,
       "inputs": [
-        { "indexed": true,  "internalType": "address", "name": "patient",   "type": "address" },
-        { "indexed": true,  "internalType": "address", "name": "doctor",    "type": "address" },
-        { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "patient",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "doctor",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
       ],
       "name": "AccessRevoked",
       "type": "event"
@@ -33,8 +54,18 @@
     {
       "anonymous": false,
       "inputs": [
-        { "indexed": true,  "internalType": "address", "name": "doctor",    "type": "address" },
-        { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "doctor",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
       ],
       "name": "DoctorDeactivated",
       "type": "event"
@@ -42,8 +73,18 @@
     {
       "anonymous": false,
       "inputs": [
-        { "indexed": true,  "internalType": "address", "name": "doctor",    "type": "address" },
-        { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "doctor",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
       ],
       "name": "DoctorRegistered",
       "type": "event"
@@ -51,10 +92,30 @@
     {
       "anonymous": false,
       "inputs": [
-        { "indexed": true,  "internalType": "uint256", "name": "id",        "type": "uint256" },
-        { "indexed": true,  "internalType": "address", "name": "patient",   "type": "address" },
-        { "indexed": false, "internalType": "string",  "name": "dataHash",  "type": "string"  },
-        { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "patient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "dataHash",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
       ],
       "name": "RecordCreated",
       "type": "event"
@@ -62,9 +123,24 @@
     {
       "anonymous": false,
       "inputs": [
-        { "indexed": true,  "internalType": "uint256", "name": "id",        "type": "uint256" },
-        { "indexed": true,  "internalType": "address", "name": "deletedBy", "type": "address" },
-        { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "deletedBy",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
       ],
       "name": "RecordDeleted",
       "type": "event"
@@ -72,97 +148,239 @@
     {
       "anonymous": false,
       "inputs": [
-        { "indexed": true,  "internalType": "uint256", "name": "id",          "type": "uint256" },
-        { "indexed": true,  "internalType": "address", "name": "updatedBy",   "type": "address" },
-        { "indexed": false, "internalType": "string",  "name": "newDataHash", "type": "string"  },
-        { "indexed": false, "internalType": "uint256", "name": "timestamp",   "type": "uint256" }
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "updatedBy",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "newDataHash",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
       ],
       "name": "RecordUpdated",
       "type": "event"
     },
     {
       "inputs": [
-        { "internalType": "address", "name": "patient", "type": "address" },
-        { "internalType": "address", "name": "doctor",  "type": "address" }
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
       ],
       "name": "accessPermission",
-      "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
       "stateMutability": "view",
       "type": "function"
     },
     {
       "inputs": [
-        { "internalType": "address", "name": "patient",  "type": "address" },
-        { "internalType": "string",  "name": "dataHash", "type": "string"  }
+        {
+          "internalType": "address",
+          "name": "patient",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "doctor",
+          "type": "address"
+        }
+      ],
+      "name": "checkAccess",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "doctorAddress",
+          "type": "address"
+        }
+      ],
+      "name": "checkDoctor",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "dataHash",
+          "type": "string"
+        }
+      ],
+      "name": "createRecord",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "newId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "patient",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "dataHash",
+          "type": "string"
+        }
       ],
       "name": "createRecordByDoctor",
-      "outputs": [{ "internalType": "uint256", "name": "newId", "type": "uint256" }],
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "newId",
+          "type": "uint256"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
     {
-      "inputs": [{ "internalType": "string", "name": "dataHash", "type": "string" }],
-      "name": "createRecord",
-      "outputs": [{ "internalType": "uint256", "name": "newId", "type": "uint256" }],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [{ "internalType": "address", "name": "doctorAddress", "type": "address" }],
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "doctorAddress",
+          "type": "address"
+        }
+      ],
       "name": "deactivateDoctor",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
     {
-      "inputs": [{ "internalType": "uint256", "name": "recordId", "type": "uint256" }],
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "recordId",
+          "type": "uint256"
+        }
+      ],
       "name": "deleteRecord",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
     {
-      "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
       "name": "doctors",
-      "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
       "stateMutability": "view",
       "type": "function"
     },
     {
-      "inputs": [{ "internalType": "address", "name": "doctor", "type": "address" }],
-      "name": "grantAccess",
-      "outputs": [],
-      "stateMutability": "nonpayable",
+      "inputs": [],
+      "name": "getMyRecords",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "activeIds",
+          "type": "uint256[]"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
       "inputs": [
-        { "internalType": "address", "name": "patient", "type": "address" },
-        { "internalType": "address", "name": "doctor",  "type": "address" }
+        {
+          "internalType": "uint256",
+          "name": "recordId",
+          "type": "uint256"
+        }
       ],
-      "name": "checkAccess",
-      "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [{ "internalType": "address", "name": "doctorAddress", "type": "address" }],
-      "name": "checkDoctor",
-      "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [{ "internalType": "uint256", "name": "recordId", "type": "uint256" }],
       "name": "getRecord",
       "outputs": [
         {
           "components": [
-            { "internalType": "uint256", "name": "id",        "type": "uint256" },
-            { "internalType": "address", "name": "patient",   "type": "address" },
-            { "internalType": "string",  "name": "dataHash",  "type": "string"  },
-            { "internalType": "uint256", "name": "timestamp", "type": "uint256" },
-            { "internalType": "bool",    "name": "active",    "type": "bool"    }
+            {
+              "internalType": "uint256",
+              "name": "id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "patient",
+              "type": "address"
+            },
+            {
+              "internalType": "string",
+              "name": "dataHash",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "active",
+              "type": "bool"
+            }
           ],
           "internalType": "struct EMR.MedicalRecord",
           "name": "",
@@ -173,41 +391,91 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "getMyRecords",
-      "outputs": [{ "internalType": "uint256[]", "name": "activeIds", "type": "uint256[]" }],
-      "stateMutability": "view",
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "doctor",
+          "type": "address"
+        }
+      ],
+      "name": "grantAccess",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
       "inputs": [],
       "name": "recordCount",
-      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-      "name": "records",
       "outputs": [
-        { "internalType": "uint256", "name": "id",        "type": "uint256" },
-        { "internalType": "address", "name": "patient",   "type": "address" },
-        { "internalType": "string",  "name": "dataHash",  "type": "string"  },
-        { "internalType": "uint256", "name": "timestamp", "type": "uint256" },
-        { "internalType": "bool",    "name": "active",    "type": "bool"    }
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
       ],
       "stateMutability": "view",
       "type": "function"
     },
     {
-      "inputs": [{ "internalType": "address", "name": "doctorAddress", "type": "address" }],
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "records",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "patient",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "dataHash",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "active",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "doctorAddress",
+          "type": "address"
+        }
+      ],
       "name": "registerDoctor",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
     {
-      "inputs": [{ "internalType": "address", "name": "doctor", "type": "address" }],
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "doctor",
+          "type": "address"
+        }
+      ],
       "name": "revokeAccess",
       "outputs": [],
       "stateMutability": "nonpayable",
@@ -215,8 +483,16 @@
     },
     {
       "inputs": [
-        { "internalType": "uint256", "name": "recordId",    "type": "uint256" },
-        { "internalType": "string",  "name": "newDataHash", "type": "string"  }
+        {
+          "internalType": "uint256",
+          "name": "recordId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "newDataHash",
+          "type": "string"
+        }
       ],
       "name": "updateRecord",
       "outputs": [],
@@ -225,13 +501,24 @@
     },
     {
       "inputs": [
-        { "internalType": "uint256", "name": "recordId",    "type": "uint256" },
-        { "internalType": "string",  "name": "newDataHash", "type": "string"  }
+        {
+          "internalType": "uint256",
+          "name": "recordId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "newDataHash",
+          "type": "string"
+        }
       ],
       "name": "updateRecordByDoctor",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     }
-  ]
+  ],
+  "network": "sepolia",
+  "deployer": "0x449cE46c28fb955b0dB04c3a0401a83160770f32",
+  "deployedAt": "2026-04-16T03:55:14.262Z"
 }
