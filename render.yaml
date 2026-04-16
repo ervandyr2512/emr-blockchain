@@ -14,5 +14,7 @@ services:
         value: 0xa328d54d623025b96F91eB654F2A77668cd6EC4c
       - key: PRIVATE_KEY
         sync: false   # set manually in Render dashboard (sensitive)
+      - key: MONGO_URI
+        sync: false   # set manually in Render dashboard (sensitive)
       - key: DATA_DIR
         value: ./data/records
