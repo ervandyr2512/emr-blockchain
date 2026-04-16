@@ -8,6 +8,7 @@
 
 import React, { useState } from "react";
 import { getContractWithSigner } from "../../utils/contract";
+import { apiCreateRecord } from "../../utils/api";
 import Spinner from "../shared/Spinner";
 
 export default function CreateRecord({ onSuccess }) {
@@ -32,35 +33,24 @@ export default function CreateRecord({ onSuccess }) {
     }
     setLoading(true);
     try {
-      // Hash the medical data via the backend (simulated IPFS)
-      const res = await fetch("/record", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        // In the full-stack demo the backend uses its operator key.
-        // For direct MetaMask signing see the note in backend/contractService.js
-        body: JSON.stringify({
-          medicalData: { ...form, createdAt: new Date().toISOString() },
-          // Pass the connected wallet's private key only in a local dev demo:
-          // privateKey: "<never in production>"
-        }),
-      });
+      // Try backend first (stores off-chain data + writes hash on-chain via operator key)
+      const medicalData = { ...form, createdAt: new Date().toISOString() };
+      try {
+        const data = await apiCreateRecord(medicalData);
+        onSuccess?.(`Record #${data.recordId} created! TX: ${data.txHash?.slice(0, 14)}…`);
+        setForm({ diagnosis: "", prescription: "", notes: "", doctorName: "", visitDate: new Date().toISOString().slice(0, 10) });
+        return;
+      } catch { /* backend unavailable — fall through to MetaMask direct */ }
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Server error");
-
-      onSuccess?.(`Record #${data.recordId} created! TX: ${data.txHash?.slice(0, 14)}…`);
+      // Fallback: sign directly with MetaMask (no off-chain storage)
+      const { contract } = await getContractWithSigner();
+      const dataHash = await browserHash(medicalData);
+      const tx       = await contract.createRecord(dataHash);
+      const receipt  = await tx.wait();
+      onSuccess?.(`Record created on-chain! TX: ${receipt.hash.slice(0, 14)}…`);
       setForm({ diagnosis: "", prescription: "", notes: "", doctorName: "", visitDate: new Date().toISOString().slice(0, 10) });
     } catch (err) {
-      // Fallback: write directly via MetaMask
-      try {
-        const { contract } = await getContractWithSigner();
-        const fakeHash = await browserHash(form);
-        const tx      = await contract.createRecord(fakeHash);
-        const receipt = await tx.wait();
-        onSuccess?.(`Record created on-chain! TX: ${receipt.hash.slice(0, 14)}…`);
-      } catch (metaMaskErr) {
-        setError(metaMaskErr.message);
-      }
+      setError(err.reason || err.message);
     } finally {
       setLoading(false);
     }

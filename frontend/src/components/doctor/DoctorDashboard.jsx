@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { getContractWithSigner, formatTimestamp } from "../../utils/contract";
+import { apiGetRecord } from "../../utils/api";
 import Notification from "../shared/Notification";
 import Spinner      from "../shared/Spinner";
 
@@ -134,8 +135,8 @@ function AccessibleRecords({ account, onError }) {
             // Try fetch off-chain data from backend
             let offChain = null;
             try {
-              const res = await fetch(`/record/${id.toString()}`);
-              if (res.ok) offChain = (await res.json()).medicalData;
+              const data = await apiGetRecord(id.toString());
+              if (data) offChain = data.medicalData;
             } catch { /* backend offline */ }
 
             allRecords.push({

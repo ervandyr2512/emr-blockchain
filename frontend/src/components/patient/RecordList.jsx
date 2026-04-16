@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { getContractWithSigner, formatTimestamp } from "../../utils/contract";
+import { apiGetRecord } from "../../utils/api";
 import Spinner from "../shared/Spinner";
 
 export default function RecordList({ account, refreshTrigger }) {
@@ -32,9 +33,9 @@ export default function RecordList({ account, refreshTrigger }) {
           // Try to fetch off-chain data from the backend
           let offChain = null;
           try {
-            const res = await fetch(`/record/${id}`);
-            if (res.ok) offChain = (await res.json()).medicalData;
-          } catch { /* offline / backend not running */ }
+            const data = await apiGetRecord(id);
+            if (data) offChain = data.medicalData;
+          } catch { /* backend offline */ }
           return {
             id:          rec.id.toString(),
             dataHash:    rec.dataHash,

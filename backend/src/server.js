@@ -30,7 +30,16 @@ const app  = express();
 const PORT = process.env.PORT || 3001;
 
 // ── Middleware ───────────────────────────────────────────────────
-app.use(cors());
+// Allow requests from Vercel frontend and localhost dev
+app.use(cors({
+  origin: [
+    "https://emr-blockchain.vercel.app",
+    "http://localhost:3000",
+    /\.vercel\.app$/,         // any Vercel preview URL
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 app.use(express.json());
 app.use(morgan("dev"));
 
