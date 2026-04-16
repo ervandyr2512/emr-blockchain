@@ -25,9 +25,4 @@ const styles = {
   },
 };
 
-// Inject keyframe once
-if (typeof document !== "undefined") {
-  const style = document.createElement("style");
-  style.textContent = "@keyframes spin { to { transform: rotate(360deg); } }";
-  document.head.appendChild(style);
-}
+// @keyframes spin is defined in index.css
