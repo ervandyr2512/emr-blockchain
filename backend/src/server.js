@@ -19,12 +19,24 @@
 
 require("dotenv").config();
 
-const express = require("express");
-const cors    = require("cors");
-const morgan  = require("morgan");
+const express  = require("express");
+const cors     = require("cors");
+const morgan   = require("morgan");
+const mongoose = require("mongoose");
 
 const recordRoutes = require("./routes/records");
 const accessRoutes = require("./routes/access");
+
+// ── Connect MongoDB ──────────────────────────────────────────────
+const MONGO_URI = process.env.MONGO_URI;
+if (MONGO_URI) {
+  mongoose
+    .connect(MONGO_URI)
+    .then(() => console.log("  MongoDB connected"))
+    .catch((err) => console.warn("  MongoDB connection failed:", err.message));
+} else {
+  console.warn("  MONGO_URI not set — using filesystem storage only");
+}
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -55,6 +67,8 @@ app.get("/", (req, res) => {
 });
 
 // ── Routes ───────────────────────────────────────────────────────
+// NOTE: /record/offchain/:hash must be registered BEFORE /record/:id
+// so Express doesn't treat "offchain" as an ID parameter.
 app.use("/record",          recordRoutes);
 app.use("/",                accessRoutes); // /grant-access, /revoke-access, etc.
 

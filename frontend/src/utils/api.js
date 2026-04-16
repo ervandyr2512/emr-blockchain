@@ -1,48 +1,63 @@
 /**
  * api.js
  * ------
- * Central API utility — reads REACT_APP_API_URL from env so the
- * frontend works both locally (proxy → localhost:3001) and on Vercel
- * (pointing to the deployed Render backend).
+ * Central API utility. Reads REACT_APP_API_URL from env so the
+ * frontend works on Vercel (Render backend) and locally (proxy).
  */
 
 const BASE = process.env.REACT_APP_API_URL
-  ? process.env.REACT_APP_API_URL.replace(/\/$/, "") // strip trailing slash
-  : "";                                               // empty = use proxy
+  ? process.env.REACT_APP_API_URL.replace(/\/$/, "")
+  : "";
 
 /**
- * POST /record  — create medical record via backend
+ * Save medical data to backend (returns { dataHash }).
+ * Backend stores JSON in MongoDB and returns the SHA-256 hash.
+ * @param {object} medicalData
  */
-export async function apiCreateRecord(medicalData) {
+export async function apiSaveOffChain(medicalData) {
   const res = await fetch(`${BASE}/record`, {
     method:  "POST",
     headers: { "Content-Type": "application/json" },
     body:    JSON.stringify({ medicalData }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Server error");
+  if (!res.ok) throw new Error(data.error || "Backend error");
   return data; // { success, recordId, dataHash, txHash }
 }
 
 /**
- * GET /record/:id  — fetch record + off-chain data
+ * Fetch full medical data by SHA-256 hash.
+ * No blockchain call — just looks up the off-chain store.
+ * @param {string} hash  SHA-256 hex string
+ * @returns {object|null}  medicalData or null if not found
  */
-export async function apiGetRecord(id) {
-  const res = await fetch(`${BASE}/record/${id}`);
-  if (!res.ok) return null;
-  return res.json(); // { id, patient, dataHash, timestamp, active, medicalData }
+export async function apiGetByHash(hash) {
+  if (!hash) return null;
+  try {
+    const res = await fetch(`${BASE}/record/offchain/${hash}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.medicalData || null;
+  } catch {
+    return null;
+  }
 }
 
 /**
- * PUT /record/:id  — update record
+ * Store off-chain data only (no blockchain write).
+ * Used when the patient signs the blockchain tx themselves via MetaMask,
+ * but we still need to persist the medical data.
+ * @param {string} hash
+ * @param {object} medicalData
  */
-export async function apiUpdateRecord(id, medicalData, isDoctor = false) {
-  const res = await fetch(`${BASE}/record/${id}`, {
-    method:  "PUT",
-    headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify({ medicalData, isDoctor }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Server error");
-  return data;
+export async function apiStoreData(hash, medicalData) {
+  try {
+    await fetch(`${BASE}/record`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ medicalData, hashOnly: true }),
+    });
+  } catch {
+    // non-critical — data stored on-chain hash remains valid
+  }
 }

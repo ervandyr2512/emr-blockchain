@@ -10,7 +10,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { getContractWithSigner, formatTimestamp } from "../../utils/contract";
-import { apiGetRecord } from "../../utils/api";
+import { apiGetByHash } from "../../utils/api";
 import Notification from "../shared/Notification";
 import Spinner      from "../shared/Spinner";
 
@@ -132,11 +132,10 @@ function AccessibleRecords({ account, onError }) {
             // getRecord will revert if record is inactive or access was revoked
             const rec = await contract.getRecord(id);
 
-            // Try fetch off-chain data from backend
+            // Fetch full medical data by hash (no extra blockchain call needed)
             let offChain = null;
             try {
-              const data = await apiGetRecord(id.toString());
-              if (data) offChain = data.medicalData;
+              offChain = await apiGetByHash(rec.dataHash);
             } catch { /* backend offline */ }
 
             allRecords.push({

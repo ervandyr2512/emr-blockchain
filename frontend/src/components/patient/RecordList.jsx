@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { getContractWithSigner, formatTimestamp } from "../../utils/contract";
-import { apiGetRecord } from "../../utils/api";
+import { apiGetByHash } from "../../utils/api";
 import Spinner from "../shared/Spinner";
 
 export default function RecordList({ account, refreshTrigger }) {
@@ -30,11 +30,10 @@ export default function RecordList({ account, refreshTrigger }) {
       const recs = await Promise.all(
         ids.map(async (id) => {
           const rec = await contract.getRecord(id);
-          // Try to fetch off-chain data from the backend
+          // Fetch full medical data from backend using hash (no extra blockchain call)
           let offChain = null;
           try {
-            const data = await apiGetRecord(id);
-            if (data) offChain = data.medicalData;
+            offChain = await apiGetByHash(rec.dataHash);
           } catch { /* backend offline */ }
           return {
             id:          rec.id.toString(),
