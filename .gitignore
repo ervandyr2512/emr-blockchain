@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Hardhat artifacts & cache
+artifacts/
+cache/
+typechain-types/
+
+# Environment files (never commit secrets)
+.env
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# Off-chain medical data (runtime data, not source)
+backend/data/records/
+
+# Contract deployment info (generated at deploy time)
+# Keep these commented out if you want to commit for demo purposes:
+# backend/src/contract/EMR.json
+# frontend/src/contract/EMR.json
+
+# Build output
+frontend/build/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*

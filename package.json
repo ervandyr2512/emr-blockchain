@@ -1,0 +1,21 @@
+{
+  "name": "emr-blockchain",
+  "version": "1.0.0",
+  "description": "Blockchain-Based Electronic Medical Record System — Ervandy Rangganata",
+  "private": true,
+  "scripts": {
+    "compile":     "hardhat compile",
+    "test":        "hardhat test",
+    "node":        "hardhat node",
+    "deploy:local":"hardhat run scripts/deploy.js --network localhost",
+    "backend":     "cd backend && npm start",
+    "frontend":    "cd frontend && npm start"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.22.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}
