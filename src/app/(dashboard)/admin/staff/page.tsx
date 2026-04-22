@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Admin — Staff Management
  * Create accounts for doctors, nurses, pharmacists.

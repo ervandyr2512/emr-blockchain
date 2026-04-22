@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Admin Dashboard — System overview, stats, and quick actions.
  */

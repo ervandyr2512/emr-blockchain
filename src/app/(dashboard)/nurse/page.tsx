@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Nurse Dashboard — Lists assigned patients waiting for SOAP input.
  */

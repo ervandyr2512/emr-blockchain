@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Patient Dashboard — View own EMR history and blockchain audit trail.
  */

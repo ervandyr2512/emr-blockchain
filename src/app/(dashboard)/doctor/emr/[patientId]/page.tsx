@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Doctor Examination Page
  * Full clinical workflow: auto-loads SOAP vitals, doctor fills in all fields,

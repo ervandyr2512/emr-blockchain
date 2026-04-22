@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Register page — Patient self-registration.
  * After creating an auth account, the user is redirected to complete biodata.

@@ -5,6 +5,10 @@
  * Redirects to /login if not authenticated.
  */
 
+// Force dynamic rendering — prevents Next.js from statically prerendering
+// dashboard pages during build (which would fail without Firebase env vars).
+export const dynamic = "force-dynamic";
+
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";

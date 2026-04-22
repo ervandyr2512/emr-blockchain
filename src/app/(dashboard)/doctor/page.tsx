@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Doctor Dashboard — Lists assigned patients ready for examination.
  */
