@@ -17,7 +17,7 @@ import {
   ref, set, get, update, push, query,
   orderByChild, equalTo, onValue, off,
 } from "firebase/database";
-import { db } from "./firebase";
+import { db, auth } from "./firebase";
 import type {
   Patient, SOAPNote, DoctorNote, Prescription,
   UserProfile, UserRole,
@@ -43,8 +43,40 @@ export async function createUserProfile(profile: UserProfile): Promise<void> {
 }
 
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
-  const snap = await get(ref(db, `users/${uid}`));
-  return snap.exists() ? (snap.val() as UserProfile) : null;
+  try {
+    const snap = await get(ref(db, `users/${uid}`));
+    if (snap.exists()) return snap.val() as UserProfile;
+
+    // SDK returned no data — try REST API fallback.
+    // This handles edge cases where the SDK instance hasn't synced the
+    // auth token yet right after signInWithEmailAndPassword.
+    const dbUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+    if (dbUrl) {
+      // Try with auth token if available, else anonymous read
+      let url = `${dbUrl}/users/${uid}.json`;
+      try {
+        const token = await auth?.currentUser?.getIdToken();
+        if (token) url += `?auth=${token}`;
+      } catch { /* ignore token error */ }
+
+      const res  = await fetch(url);
+      const data = await res.json();
+      if (data && data.uid) return data as UserProfile;
+    }
+    return null;
+  } catch (err) {
+    console.error("[getUserProfile] SDK error:", err);
+    // Last resort: direct REST fetch without auth
+    try {
+      const dbUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+      if (dbUrl) {
+        const res  = await fetch(`${dbUrl}/users/${uid}.json`);
+        const data = await res.json();
+        if (data && data.uid) return data as UserProfile;
+      }
+    } catch { /* ignore */ }
+    return null;
+  }
 }
 
 export async function updateUserRole(uid: string, role: UserRole): Promise<void> {

@@ -36,11 +36,17 @@ export default function LoginPage() {
       router.push(getDashboardPath(profile.role));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Login gagal";
-      // Translate Firebase error codes
-      if (msg.includes("invalid-credential") || msg.includes("wrong-password")) {
+      // Translate Firebase error codes to Indonesian
+      if (msg.includes("invalid-credential") || msg.includes("wrong-password") || msg.includes("INVALID_PASSWORD")) {
         toast.error("Email atau password salah.");
+      } else if (msg.includes("user-not-found") || msg.includes("USER_NOT_FOUND")) {
+        toast.error("Email tidak terdaftar. Silakan daftar terlebih dahulu.");
       } else if (msg.includes("too-many-requests")) {
-        toast.error("Terlalu banyak percobaan. Coba lagi nanti.");
+        toast.error("Terlalu banyak percobaan. Coba lagi beberapa menit.");
+      } else if (msg.includes("network-request-failed") || msg.includes("network")) {
+        toast.error("Gagal terhubung ke server. Periksa koneksi internet Anda.");
+      } else if (msg.includes("Profil pengguna tidak ditemukan")) {
+        toast.error("Login berhasil tetapi profil tidak ditemukan. Hubungi admin.");
       } else {
         toast.error(msg);
       }
