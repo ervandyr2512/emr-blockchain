@@ -1,5 +1,6 @@
 {
-  "rewrites": [
-    { "source": "/((?!_next|api|favicon.ico).*)", "destination": "/" }
-  ]
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "framework": "nextjs"
 }
