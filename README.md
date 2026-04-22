@@ -1,7 +1,152 @@
-# Blockchain-Based Electronic Medical Record (EMR) System
+# EMR Blockchain — Sistem Rekam Medis Elektronik Berbasis Blockchain
 
-**Ervandy Rangganata — NIM: 0706012414015**  
-Universitas Ciputra Online Learning, Surabaya 2026
+> **Proyek:** AFL-3 · Universitas Ciputra Online Learning 2026  
+> **Penulis:** Ervandy Rangganata (NIM: 0706012414015)
+
+---
+
+## 🌐 Live Demo
+
+| Komponen | URL |
+|----------|-----|
+| Frontend | https://emr-blockchain.vercel.app |
+| Smart Contract (Sepolia) | `0xa328d54d623025b96F91eB654F2A77668cd6EC4c` |
+| Explorer | https://sepolia.etherscan.io/address/0xa328d54d623025b96F91eB654F2A77668cd6EC4c |
+
+---
+
+## 🏗️ Arsitektur Sistem
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│                     FRONTEND (Vercel)                         │
+│           Next.js 15 + Tailwind CSS + ethers.js               │
+│                                                               │
+│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌──────────┐   │
+│  │ Admin  │ │ Dokter │ │Perawat │ │ Pasien │ │ Apoteker │   │
+│  └────────┘ └────────┘ └────────┘ └────────┘ └──────────┘   │
+└──────────────────┬───────────────────────────┬───────────────┘
+                   │ Firebase SDK              │ ethers.js
+                   ▼                           ▼
+      ┌────────────────────┐    ┌──────────────────────────┐
+      │  Firebase RTDB     │    │  Ethereum Sepolia Testnet│
+      │  - patients        │    │  Smart Contract EMRv2    │
+      │  - soap_notes      │    │  (Hash + Audit Trail)    │
+      │  - doctor_notes    │    └──────────────────────────┘
+      │  - prescriptions   │
+      │  Firebase Auth     │
+      └────────────────────┘
+```
+
+---
+
+## 👥 Role-Based Access Control (5 Role)
+
+| Role | Akses |
+|------|-------|
+| **Admin RS** | Lihat semua pasien, tugaskan ke departemen/poli, kelola akun staff |
+| **Dokter** | Input pemeriksaan lengkap, diagnosis, resep obat |
+| **Perawat** | Input SOAP dan tanda-tanda vital |
+| **Pasien** | Lihat rekam medis + audit trail blockchain |
+| **Apoteker** | Proses & konfirmasi pengeluaran resep |
+
+---
+
+## 🏥 Alur Kerja Klinis
+
+```
+Pasien Daftar → Admin Tugaskan Poli → Perawat Input SOAP
+       ↓                   ↓                    ↓
+Firebase + BC         Firebase + BC        Firebase + BC
+
+Dokter Periksa → Resep ke Apoteker → Apoteker Serahkan Obat
+       ↓                 ↓                     ↓
+  Firebase + BC      Firebase             Firebase + BC
+```
+
+---
+
+## ⛓️ Smart Contract (EMRv2.sol)
+
+| Fungsi | Pemanggil | Deskripsi |
+|--------|-----------|-----------|
+| `registerPatient(emrId, hash)` | Admin/Pasien | Daftarkan pasien on-chain |
+| `submitSOAP(emrId, hash)` | Perawat | Rekam SOAP |
+| `submitDoctorNote(emrId, hash)` | Dokter | Rekam catatan dokter |
+| `fulfillPrescription(emrId, hash)` | Apoteker | Konfirmasi resep |
+| `assignDepartment(emrId, hash)` | Admin | Penugasan poli |
+| `getEMRActions(emrId)` | Siapa saja | Audit trail |
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# Clone
+git clone https://github.com/ervandyr2512/emr-blockchain.git
+cd emr-blockchain
+
+# Install root (Hardhat)
+npm install
+
+# Install frontend
+cd frontend && npm install
+
+# Run dev
+npm run dev   # http://localhost:3000
+```
+
+### Deploy Smart Contract
+```bash
+npx hardhat run scripts/deployV2.js --network sepolia
+```
+
+### Deploy Firebase Rules
+```bash
+firebase deploy --only database --project emr-blockchain
+```
+
+---
+
+## 📁 Struktur Direktori
+
+```
+emr-blockchain/
+├── contracts/
+│   ├── EMR.sol         ← v1 (basic)
+│   └── EMRv2.sol       ← v2 multi-role
+├── scripts/
+│   └── deployV2.js
+├── firebase/
+│   ├── database.rules.json
+│   └── schema.json
+└── frontend/           ← Next.js App
+    ├── src/
+    │   ├── app/
+    │   │   ├── (auth)/login & register
+    │   │   ├── (dashboard)/admin, doctor, nurse, patient, pharmacist
+    │   │   └── api/hash & blockchain
+    │   ├── components/layout & ui
+    │   ├── contexts/AuthContext
+    │   ├── lib/firebase, blockchain, emr, hash, auth
+    │   └── types/
+    └── package.json
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Teknologi |
+|-------|-----------|
+| Smart Contract | Solidity ^0.8.19, Hardhat |
+| Blockchain | Ethereum Sepolia Testnet |
+| Frontend | Next.js 15, React 18, TypeScript |
+| Styling | Tailwind CSS v3 |
+| Auth & DB | Firebase Auth + Realtime Database |
+| Web3 Client | ethers.js v6 |
+| Icons | Lucide React |
+| Deployment | Vercel |
 
 ---
 

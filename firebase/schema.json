@@ -1,0 +1,123 @@
+{
+  "_comment": "Firebase Realtime Database Schema — EMR Blockchain System",
+
+  "counters": {
+    "patients": 0
+  },
+
+  "users": {
+    "{uid}": {
+      "uid":       "string — Firebase Auth UID",
+      "email":     "string",
+      "name":      "string",
+      "role":      "patient | doctor | nurse | admin | pharmacist",
+      "createdAt": "ISO 8601 string"
+    }
+  },
+
+  "patients": {
+    "{emrId}": {
+      "emrId":     "string — EMR-YYYYMMDD-NNNNN",
+      "uid":       "string — Firebase Auth UID",
+      "firstName": "string",
+      "lastName":  "string",
+      "gender":    "Laki-laki | Perempuan",
+      "ktpNumber": "string — 16 digit NIK",
+      "address": {
+        "street":    "string",
+        "kelurahan": "string",
+        "kecamatan": "string",
+        "kota":      "string",
+        "kodePos":   "string"
+      },
+      "phone":      "string",
+      "email":      "string",
+      "emergencyContact": {
+        "name":  "string",
+        "phone": "string"
+      },
+      "department":  "string | null — assigned poli",
+      "status":      "registered | waiting | assigned | in_examination | completed | discharged",
+      "blockchainTxHash": "string | null",
+      "createdAt": "ISO 8601 string",
+      "updatedAt": "ISO 8601 string"
+    }
+  },
+
+  "soap_notes": {
+    "{emrId}": {
+      "{noteId}": {
+        "id":          "string — Firebase push key",
+        "emrId":       "string",
+        "nurseUid":    "string",
+        "nurseName":   "string",
+        "subjective":  "string",
+        "objective": {
+          "bloodPressure":    "string — e.g. 120/80",
+          "heartRate":        "number — bpm",
+          "temperature":      "number — Celsius",
+          "respiratoryRate":  "number — breaths/min",
+          "oxygenSaturation": "number — SpO2 %",
+          "weight":           "number | null",
+          "height":           "number | null"
+        },
+        "assessment":  "string",
+        "plan":        "string",
+        "blockchainTxHash": "string | null",
+        "createdAt":   "ISO 8601 string"
+      }
+    }
+  },
+
+  "doctor_notes": {
+    "{emrId}": {
+      "{noteId}": {
+        "id":                    "string",
+        "emrId":                 "string",
+        "doctorUid":             "string",
+        "doctorName":            "string",
+        "chiefComplaint":        "string",
+        "historyPresentIllness": "string",
+        "pastMedicalHistory":    "string",
+        "surgicalHistory":       "string",
+        "medicationHistory":     "string",
+        "allergy":               "string",
+        "vitalSigns":            "VitalSigns object (auto-filled from SOAP)",
+        "physicalExamination":   "string",
+        "supportingExams":       "SupportingExam[]",
+        "workingDiagnosis":      "string",
+        "differentialDiagnosis": "string",
+        "managementPlan":        "string",
+        "blockchainTxHash":      "string | null",
+        "createdAt":             "ISO 8601 string",
+        "updatedAt":             "ISO 8601 string"
+      }
+    }
+  },
+
+  "prescriptions": {
+    "{emrId}": {
+      "{rxId}": {
+        "id":              "string",
+        "emrId":           "string",
+        "doctorUid":       "string",
+        "doctorName":      "string",
+        "pharmacistUid":   "string | null",
+        "pharmacistName":  "string | null",
+        "medications": [
+          {
+            "name":      "string",
+            "dose":      "string",
+            "frequency": "string",
+            "duration":  "string",
+            "notes":     "string | null"
+          }
+        ],
+        "status":          "pending | processing | dispensed | cancelled",
+        "blockchainTxHash": "string | null",
+        "createdAt":       "ISO 8601 string",
+        "dispensedAt":     "ISO 8601 string | null"
+      }
+    }
+  }
+}
