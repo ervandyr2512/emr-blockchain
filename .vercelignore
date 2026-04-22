@@ -3,8 +3,7 @@ scripts/
 test/
 backend/
 firebase/
+frontend/
 artifacts/
 cache/
-frontend/node_modules/
-frontend/.next/
 hardhat.config.js
