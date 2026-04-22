@@ -24,6 +24,8 @@ backend/data/records/
 
 # Build output
 frontend/build/
+.next/
+out/
 
 # OS / editor
 .DS_Store
