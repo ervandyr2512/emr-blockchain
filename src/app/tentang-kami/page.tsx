@@ -12,7 +12,7 @@ import { LandingNavbar } from "@/components/layout/LandingNavbar";
 import { LandingFooter } from "@/components/layout/LandingFooter";
 
 const TEAM = [
-  { name: "Dr. Ervand Yrangganata",    role: "Founder & CEO",           bg: "from-blue-500 to-blue-600"   },
+  { name: "dr. Ervandy Rangganata, SpU", role: "Founder & CEO",           bg: "from-blue-500 to-blue-600"   },
   { name: "Aditya Pratama, M.Kom",     role: "Chief Technology Officer", bg: "from-teal-500 to-teal-600"   },
   { name: "Dr. Ninda Rahayu, Sp.PD",   role: "Chief Medical Officer",    bg: "from-purple-500 to-purple-600"},
   { name: "Reza Firmansyah, S.Kom",    role: "Blockchain Engineer",      bg: "from-amber-500 to-amber-600" },

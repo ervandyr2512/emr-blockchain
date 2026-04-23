@@ -10,7 +10,8 @@
  * ├── soap_notes/{emrId}/{noteId}       — SOAP notes by nurse
  * ├── doctor_notes/{emrId}/{noteId}     — Doctor examination notes
  * ├── prescriptions/{emrId}/{rxId}      — Prescriptions
- * └── counters/patients                 — Auto-increment counter for EMR ID
+ * ├── counters/patients                 — Auto-increment counter for EMR ID
+ * └── doctor_applications/{uid}         — Doctor self-registration applications
  */
 
 import {
@@ -20,7 +21,7 @@ import {
 import { db, auth } from "./firebase";
 import type {
   Patient, SOAPNote, DoctorNote, Prescription,
-  UserProfile, UserRole,
+  UserProfile, UserRole, DoctorApplication,
 } from "@/types";
 
 // ── ID Generation ────────────────────────────────────────────────────────────
@@ -366,6 +367,64 @@ export async function updatePrescriptionStatus(
     ...(pharmacistUid ? { pharmacistUid, pharmacistName } : {}),
     ...(txHash ? { blockchainTxHash: txHash } : {}),
     dispensedAt: status === "dispensed" ? new Date().toISOString() : null,
+  });
+}
+
+// ── Doctor Applications ───────────────────────────────────────────────────────
+
+/** Save a new doctor registration application (status = "pending"). */
+export async function saveDoctorApplication(application: DoctorApplication): Promise<void> {
+  await set(ref(db, `doctor_applications/${application.uid}`), application);
+}
+
+/** Get all doctor applications (for admin review). */
+export async function getDoctorApplications(): Promise<DoctorApplication[]> {
+  const snap = await get(ref(db, "doctor_applications"));
+  if (!snap.exists()) return [];
+  return Object.values(snap.val() as Record<string, DoctorApplication>)
+    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+}
+
+/** Get a single doctor application by uid. */
+export async function getDoctorApplication(uid: string): Promise<DoctorApplication | null> {
+  const snap = await get(ref(db, `doctor_applications/${uid}`));
+  if (!snap.exists()) return null;
+  return snap.val() as DoctorApplication;
+}
+
+/**
+ * Admin approves a doctor application:
+ * 1. Updates user role from "pending_doctor" → "doctor"
+ * 2. Marks application as "approved"
+ */
+export async function approveDoctorApplication(
+  uid: string,
+  adminName: string
+): Promise<void> {
+  const now = new Date().toISOString();
+  await update(ref(db, `users/${uid}`), { role: "doctor" });
+  await update(ref(db, `doctor_applications/${uid}`), {
+    status:     "approved",
+    reviewedAt: now,
+    reviewedBy: adminName,
+  });
+}
+
+/**
+ * Admin rejects a doctor application.
+ * The user role stays "pending_doctor" (they cannot log in to any dashboard).
+ */
+export async function rejectDoctorApplication(
+  uid: string,
+  adminName: string,
+  reason: string
+): Promise<void> {
+  const now = new Date().toISOString();
+  await update(ref(db, `doctor_applications/${uid}`), {
+    status:       "rejected",
+    reviewedAt:   now,
+    reviewedBy:   adminName,
+    rejectReason: reason,
   });
 }
 

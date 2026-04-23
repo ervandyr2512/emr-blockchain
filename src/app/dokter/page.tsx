@@ -184,7 +184,7 @@ export default function DokterPage() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">Anda Seorang Dokter?</h2>
           <p className="text-white/80 mb-8">Bergabunglah dengan jaringan EMRChain dan kelola rekam medis pasien dengan lebih efisien dan aman.</p>
-          <Link href="/register" className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-teal-700 font-bold rounded-2xl hover:bg-teal-50 transition-colors shadow-lg">
+          <Link href="/register-dokter" className="inline-flex items-center gap-2 px-7 py-3.5 bg-white text-teal-700 font-bold rounded-2xl hover:bg-teal-50 transition-colors shadow-lg">
             Daftar Sebagai Dokter <ChevronRight className="w-4 h-4" />
           </Link>
         </div>

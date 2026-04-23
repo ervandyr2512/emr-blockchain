@@ -107,11 +107,12 @@ const NAV_ITEMS: NavItem[] = [
 // ── Role colors ────────────────────────────────────────────────────────────────
 
 const roleConfig: Record<UserRole, { label: string; color: string }> = {
-  admin:       { label: "Admin RS",  color: "bg-purple-100 text-purple-700" },
-  doctor:      { label: "Dokter",    color: "bg-primary-100 text-primary-700" },
-  nurse:       { label: "Perawat",   color: "bg-teal-100 text-teal-700" },
-  patient:     { label: "Pasien",    color: "bg-green-100 text-green-700" },
-  pharmacist:  { label: "Apoteker",  color: "bg-amber-100 text-amber-700" },
+  admin:          { label: "Admin RS",       color: "bg-purple-100 text-purple-700" },
+  doctor:         { label: "Dokter",         color: "bg-primary-100 text-primary-700" },
+  nurse:          { label: "Perawat",        color: "bg-teal-100 text-teal-700" },
+  patient:        { label: "Pasien",         color: "bg-green-100 text-green-700" },
+  pharmacist:     { label: "Apoteker",       color: "bg-amber-100 text-amber-700" },
+  pending_doctor: { label: "Menunggu Verif", color: "bg-slate-100 text-slate-500" },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────

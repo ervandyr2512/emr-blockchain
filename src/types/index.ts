@@ -1,6 +1,6 @@
 // ─── User & Auth ────────────────────────────────────────────────────────────
 
-export type UserRole = "patient" | "doctor" | "nurse" | "admin" | "pharmacist";
+export type UserRole = "patient" | "doctor" | "nurse" | "admin" | "pharmacist" | "pending_doctor";
 
 export interface UserProfile {
   uid:       string;
@@ -188,6 +188,29 @@ export const ACTION_TYPE_LABELS: Record<number, string> = {
   4: "Record Updated",
   5: "Department Assigned",
 };
+
+// ─── Doctor Application ─────────────────────────────────────────────────────
+
+export type DoctorApplicationStatus = "pending" | "approved" | "rejected";
+
+export interface DoctorApplication {
+  uid:            string;   // Firebase Auth UID (created at registration time)
+  email:          string;
+  name:           string;   // Full name with title, e.g. "dr. Budi Santoso, Sp.PD"
+  phone:          string;
+  specialization: string;   // e.g. "Penyakit Dalam"
+  strNumber:      string;   // Surat Tanda Registrasi
+  sipNumber:      string;   // Surat Izin Praktik
+  hospital:       string;   // Current hospital/clinic affiliation
+  education:      string;   // Medical school + graduation year
+  experience:     number;   // Years of experience
+  bio:            string;   // Short professional bio
+  status:         DoctorApplicationStatus;
+  submittedAt:    string;   // ISO string
+  reviewedAt?:    string;
+  reviewedBy?:    string;   // Admin name who reviewed
+  rejectReason?:  string;
+}
 
 // ─── Notifications ──────────────────────────────────────────────────────────
 

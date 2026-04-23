@@ -1,6 +1,6 @@
 // ─── User & Auth ────────────────────────────────────────────────────────────
 
-export type UserRole = "patient" | "doctor" | "nurse" | "admin" | "pharmacist";
+export type UserRole = "patient" | "doctor" | "nurse" | "admin" | "pharmacist" | "pending_doctor";
 
 export interface UserProfile {
   uid:       string;

@@ -119,11 +119,12 @@ export async function getCurrentProfile(): Promise<UserProfile | null> {
 
 export function getDashboardPath(role: UserRole): string {
   const paths: Record<UserRole, string> = {
-    admin:       "/admin",
-    doctor:      "/doctor",
-    nurse:       "/nurse",
-    patient:     "/patient",
-    pharmacist:  "/pharmacist",
+    admin:          "/admin",
+    doctor:         "/doctor",
+    nurse:          "/nurse",
+    patient:        "/patient",
+    pharmacist:     "/pharmacist",
+    pending_doctor: "/pending-approval",
   };
-  return paths[role];
+  return paths[role] ?? "/login";
 }
