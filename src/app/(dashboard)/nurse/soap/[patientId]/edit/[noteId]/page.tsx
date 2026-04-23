@@ -17,7 +17,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, TextArea } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
-import { getPatient, getSOAPNote, updateSOAPNote } from "@/lib/emr";
+import { getPatient, getSOAPNote, updateSOAPNote, addSOAPBlockchainTrail } from "@/lib/emr";
 import { blockchainSubmitSOAPFull, extractErrorMessage } from "@/lib/blockchain";
 import { createNotification } from "@/lib/notifications";
 import { sha256 } from "@/lib/hash";
@@ -126,6 +126,13 @@ export default function EditSOAPPage() {
         );
         setTxHash(hash);
         toast.success("Pembaruan SOAP direkam di blockchain! ✅", { id: bcToastId });
+        // Record blockchain trail for the update
+        await addSOAPBlockchainTrail(patientId, noteId, {
+          txHash:    hash,
+          timestamp: new Date().toISOString(),
+          action:    "updated",
+          actorName: profile.name,
+        });
       } catch (bcErr: unknown) {
         console.error("[Blockchain EditSOAP]", bcErr);
         toast.error(`⚠️ Blockchain gagal: ${extractErrorMessage(bcErr)}`, { id: bcToastId, duration: 12000 });

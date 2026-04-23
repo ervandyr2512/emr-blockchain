@@ -16,10 +16,11 @@ import React, { useState } from "react";
 import {
   ChevronDown, ChevronUp, ClipboardList, UserCheck,
   Pill, FlaskConical, Link as LinkIcon, PackageCheck, Clock, Pencil,
+  ShieldCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import type { SOAPNote, DoctorNote, Prescription, VitalSigns } from "@/types";
+import type { SOAPNote, DoctorNote, Prescription, VitalSigns, BlockchainTrailEntry } from "@/types";
 
 // ── Micro-components ─────────────────────────────────────────────────────────
 
@@ -57,11 +58,96 @@ function SOAPField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function TxHashRow({ hash }: { hash: string }) {
+/** Full blockchain trail panel — shows Network, EMR ID, and all trail entries */
+function BlockchainTrailSection({
+  emrId,
+  txHash,
+  history,
+}: {
+  emrId: string;
+  txHash?: string;
+  history?: Record<string, BlockchainTrailEntry>;
+}) {
+  const trails: BlockchainTrailEntry[] = history
+    ? Object.values(history).sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      )
+    : [];
+
+  // Fallback: if no trail history but we have a txHash, show a minimal row
+  const showFallback = trails.length === 0 && !!txHash;
+
+  if (!txHash && trails.length === 0) return null;
+
   return (
-    <div className="flex items-center gap-2 text-[11px] text-green-600 bg-green-50 border border-green-100 rounded-lg px-3 py-1.5">
-      <LinkIcon className="w-3 h-3 flex-shrink-0" />
-      <span className="font-mono truncate">{hash}</span>
+    <div className="rounded-xl border border-green-200 bg-green-50/50 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-1.5 px-3 py-2 bg-green-100/70 border-b border-green-200">
+        <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
+        <span className="text-[11px] font-bold text-green-700 uppercase tracking-wide">
+          Blockchain Trail
+        </span>
+      </div>
+
+      <div className="px-3 py-2.5 space-y-2.5">
+        {/* Meta row */}
+        <div className="grid grid-cols-2 gap-x-4 text-[11px]">
+          <div>
+            <p className="text-slate-400 font-semibold uppercase tracking-wide text-[10px]">Network</p>
+            <p className="text-slate-700 font-medium">Ethereum Sepolia</p>
+          </div>
+          <div>
+            <p className="text-slate-400 font-semibold uppercase tracking-wide text-[10px]">EMR ID</p>
+            <p className="font-mono text-slate-700">{emrId}</p>
+          </div>
+        </div>
+
+        {/* Trail entries */}
+        {trails.length > 0 && (
+          <div className="space-y-2 pt-0.5">
+            {trails.map((entry, i) => (
+              <div
+                key={i}
+                className="pl-2.5 border-l-2 border-green-300 space-y-0.5 text-[11px]"
+              >
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span
+                    className={`font-bold px-1.5 py-0.5 rounded-full text-[10px] ${
+                      entry.action === "created"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {entry.action === "created" ? "Dibuat" : "Diperbarui"}
+                  </span>
+                  {entry.actorName && (
+                    <span className="text-slate-600 font-medium">{entry.actorName}</span>
+                  )}
+                  {entry.timestamp && (
+                    <span className="text-slate-400">
+                      ·{" "}
+                      {format(new Date(entry.timestamp), "dd MMM yyyy · HH:mm", {
+                        locale: localeId,
+                      })}
+                    </span>
+                  )}
+                </div>
+                <p className="font-mono text-green-600 break-all text-[10px] leading-snug">
+                  {entry.txHash}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Fallback for legacy entries that only have blockchainTxHash but no history */}
+        {showFallback && (
+          <div className="flex items-start gap-1.5 text-[11px]">
+            <LinkIcon className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+            <p className="font-mono text-green-600 break-all leading-snug">{txHash}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -83,16 +169,15 @@ export function SOAPHistoryCard({
   onEdit?: (noteId: string) => void;
 }) {
   const allIds = notes.map((n) => n.id);
-  const [openIds, setOpenIds] = useState<Set<string>>(
-    () => new Set(notes[0]?.id ? [notes[0].id] : [])
-  );
+  // Default: all collapsed
+  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const toggle = (id: string) =>
     setOpenIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  const allOpen = allIds.every((id) => openIds.has(id));
+  const allOpen = allIds.length > 0 && allIds.every((id) => openIds.has(id));
   const toggleAll = () =>
     setOpenIds(allOpen ? new Set() : new Set(allIds));
   if (notes.length === 0) return null;
@@ -114,7 +199,8 @@ export function SOAPHistoryCard({
 
       <div className="divide-y divide-slate-100">
         {notes.map((n) => {
-          const open = openIds.has(n.id);
+          const open    = openIds.has(n.id);
+          const edited  = !!n.updatedAt && n.updatedAt !== n.createdAt;
           return (
             <div key={n.id} className={open ? "bg-amber-50/40" : "bg-white"}>
               <button
@@ -123,13 +209,21 @@ export function SOAPHistoryCard({
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-amber-50/60 transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800">
+                  <p className="text-sm font-semibold text-slate-800 flex flex-wrap items-center gap-1.5">
                     {format(new Date(n.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                    {edited && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                        ✏️ Diperbarui
+                      </span>
+                    )}
                   </p>
-                  <p className="text-xs text-slate-500 truncate">
+                  <p className="text-xs text-slate-500 truncate mt-0.5">
                     {n.nurseName}
+                    {edited && n.updatedAt
+                      ? ` · diperbarui ${format(new Date(n.updatedAt), "dd MMM yyyy · HH:mm", { locale: localeId })}`
+                      : ""}
                     {n.subjective
-                      ? ` · "${n.subjective.slice(0, 70)}${n.subjective.length > 70 ? "…" : ""}"`
+                      ? ` · "${n.subjective.slice(0, 60)}${n.subjective.length > 60 ? "…" : ""}"`
                       : ""}
                   </p>
                 </div>
@@ -151,7 +245,11 @@ export function SOAPHistoryCard({
                     <VitalsGrid v={n.objective} />
                   </div>
 
-                  {n.blockchainTxHash && <TxHashRow hash={n.blockchainTxHash} />}
+                  <BlockchainTrailSection
+                    emrId={n.emrId}
+                    txHash={n.blockchainTxHash}
+                    history={n.blockchainHistory}
+                  />
 
                   {onEdit && (
                     <div className="pt-1 flex justify-end">
@@ -184,16 +282,15 @@ export function DoctorHistoryCard({
   onEdit?: (noteId: string) => void;
 }) {
   const allIds = notes.map((n) => n.id);
-  const [openIds, setOpenIds] = useState<Set<string>>(
-    () => new Set(notes[0]?.id ? [notes[0].id] : [])
-  );
+  // Default: all collapsed
+  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const toggle = (id: string) =>
     setOpenIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  const allOpen = allIds.every((id) => openIds.has(id));
+  const allOpen = allIds.length > 0 && allIds.every((id) => openIds.has(id));
   const toggleAll = () =>
     setOpenIds(allOpen ? new Set() : new Set(allIds));
   if (notes.length === 0) return null;
@@ -215,7 +312,8 @@ export function DoctorHistoryCard({
 
       <div className="divide-y divide-slate-100">
         {notes.map((n) => {
-          const open = openIds.has(n.id);
+          const open   = openIds.has(n.id);
+          const edited = !!n.updatedAt && n.updatedAt !== n.createdAt;
           return (
             <div key={n.id} className={open ? "bg-primary-50/30" : "bg-white"}>
               <button
@@ -224,7 +322,7 @@ export function DoctorHistoryCard({
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary-50/50 transition-colors"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold text-slate-800 flex flex-wrap items-center gap-1.5">
                     {format(new Date(n.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
                     {n.workingDiagnosis && (
                       <span className="text-xs font-normal text-primary-700 bg-primary-100 px-2 py-0.5 rounded-full truncate max-w-[220px]">
@@ -233,8 +331,18 @@ export function DoctorHistoryCard({
                           : n.workingDiagnosis}
                       </span>
                     )}
+                    {edited && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                        ✏️ Diperbarui
+                      </span>
+                    )}
                   </p>
-                  <p className="text-xs text-slate-500">Dr. {n.doctorName}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Dr. {n.doctorName}
+                    {edited && n.updatedAt
+                      ? ` · diperbarui ${format(new Date(n.updatedAt), "dd MMM yyyy · HH:mm", { locale: localeId })}`
+                      : ""}
+                  </p>
                 </div>
                 {open
                   ? <ChevronUp   className="w-4 h-4 text-slate-400 flex-shrink-0" />
@@ -306,7 +414,11 @@ export function DoctorHistoryCard({
                     <SOAPField label="Rencana Tata Laksana" value={n.managementPlan} />
                   )}
 
-                  {n.blockchainTxHash && <TxHashRow hash={n.blockchainTxHash} />}
+                  <BlockchainTrailSection
+                    emrId={n.emrId}
+                    txHash={n.blockchainTxHash}
+                    history={n.blockchainHistory}
+                  />
 
                   {onEdit && (
                     <div className="pt-1 flex justify-end">
@@ -333,16 +445,15 @@ export function DoctorHistoryCard({
 
 export function PrescriptionHistoryCard({ prescriptions }: { prescriptions: Prescription[] }) {
   const allIds = prescriptions.map((rx) => rx.id);
-  const [openIds, setOpenIds] = useState<Set<string>>(
-    () => new Set(prescriptions[0]?.id ? [prescriptions[0].id] : [])
-  );
+  // Default: all collapsed
+  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const toggle = (id: string) =>
     setOpenIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  const allOpen = allIds.every((id) => openIds.has(id));
+  const allOpen = allIds.length > 0 && allIds.every((id) => openIds.has(id));
   const toggleAll = () =>
     setOpenIds(allOpen ? new Set() : new Set(allIds));
   if (prescriptions.length === 0) return null;
@@ -443,8 +554,13 @@ export function PrescriptionHistoryCard({ prescriptions }: { prescriptions: Pres
                     </div>
                   )}
 
-                  {/* Blockchain hash */}
-                  {rx.blockchainTxHash && <TxHashRow hash={rx.blockchainTxHash} />}
+                  {/* Blockchain trail */}
+                  {rx.blockchainTxHash && (
+                    <BlockchainTrailSection
+                      emrId={rx.emrId}
+                      txHash={rx.blockchainTxHash}
+                    />
+                  )}
                 </div>
               )}
             </div>

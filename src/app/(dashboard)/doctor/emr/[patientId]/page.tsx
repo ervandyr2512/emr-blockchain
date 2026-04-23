@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, TextArea, Select } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { SOAPHistoryCard, DoctorHistoryCard, PrescriptionHistoryCard } from "@/components/ui/MedicalHistoryCards";
-import { getPatient, getLatestSOAP, getAllSOAPNotes, getAllDoctorNotes, getPrescriptionsByEmrId, saveDoctorNote, savePrescription } from "@/lib/emr";
+import { getPatient, getLatestSOAP, getAllSOAPNotes, getAllDoctorNotes, getPrescriptionsByEmrId, saveDoctorNote, savePrescription, addDoctorNoteBlockchainTrail } from "@/lib/emr";
 import { blockchainSubmitDoctorNoteFull, extractErrorMessage } from "@/lib/blockchain";
 import { createNotification } from "@/lib/notifications";
 import { sha256 } from "@/lib/hash";
@@ -133,7 +133,7 @@ export default function DoctorEMRPage() {
       const dataHash = await sha256(note);
 
       // Save doctor note to Firebase
-      await saveDoctorNote(note);
+      const noteId = await saveDoctorNote(note);
 
       // Save prescription if medications present
       if (medications.length > 0) {
@@ -161,6 +161,13 @@ export default function DoctorEMRPage() {
         );
         setTxHash(bcHash);
         toast.success("Catatan dokter berhasil direkam di blockchain! ✅", { id: bcToastId });
+        // Record blockchain trail on the note
+        await addDoctorNoteBlockchainTrail(patientId, noteId, {
+          txHash:    bcHash,
+          timestamp: new Date().toISOString(),
+          action:    "created",
+          actorName: profile.name,
+        });
       } catch (bcErr: unknown) {
         console.error("[Blockchain DoctorNote]", bcErr);
         const errMsg = extractErrorMessage(bcErr);

@@ -18,7 +18,7 @@ import { Input, TextArea } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { SOAPHistoryCard, DoctorHistoryCard, PrescriptionHistoryCard } from "@/components/ui/MedicalHistoryCards";
 import {
-  getPatient, saveSOAPNote,
+  getPatient, saveSOAPNote, addSOAPBlockchainTrail,
   getAllSOAPNotes, getAllDoctorNotes, getPrescriptionsByEmrId,
 } from "@/lib/emr";
 import { blockchainSubmitSOAPFull, extractErrorMessage } from "@/lib/blockchain";
@@ -105,7 +105,7 @@ export default function SOAPPage() {
       };
 
       const dataHash = await sha256(note);
-      await saveSOAPNote({ ...note, blockchainTxHash: "" });
+      const noteId = await saveSOAPNote({ ...note, blockchainTxHash: "" });
 
       let hash = "";
       const bcToastId = toast.loading("Memulai transaksi blockchain…");
@@ -117,6 +117,13 @@ export default function SOAPPage() {
         );
         setTxHash(hash);
         toast.success("SOAP berhasil direkam di blockchain! ✅", { id: bcToastId });
+        // Record blockchain trail on the note
+        await addSOAPBlockchainTrail(patientId, noteId, {
+          txHash:    hash,
+          timestamp: new Date().toISOString(),
+          action:    "created",
+          actorName: profile.name,
+        });
       } catch (bcErr: unknown) {
         console.error("[Blockchain SOAP]", bcErr);
         const errMsg = extractErrorMessage(bcErr);

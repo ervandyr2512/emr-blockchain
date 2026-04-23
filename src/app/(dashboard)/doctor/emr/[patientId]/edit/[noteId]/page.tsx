@@ -17,7 +17,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, TextArea, Select } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
-import { getPatient, getDoctorNote, updateDoctorNote } from "@/lib/emr";
+import { getPatient, getDoctorNote, updateDoctorNote, addDoctorNoteBlockchainTrail } from "@/lib/emr";
 import { blockchainSubmitDoctorNoteFull, extractErrorMessage } from "@/lib/blockchain";
 import { createNotification } from "@/lib/notifications";
 import { sha256 } from "@/lib/hash";
@@ -158,6 +158,13 @@ export default function EditDoctorNotePage() {
         );
         setTxHash(hash);
         toast.success("Pembaruan catatan dokter direkam di blockchain! ✅", { id: bcToastId });
+        // Record blockchain trail for the update
+        await addDoctorNoteBlockchainTrail(patientId, noteId, {
+          txHash:    hash,
+          timestamp: new Date().toISOString(),
+          action:    "updated",
+          actorName: profile.name,
+        });
       } catch (bcErr: unknown) {
         console.error("[Blockchain EditDoctorNote]", bcErr);
         toast.error(`⚠️ Blockchain gagal: ${extractErrorMessage(bcErr)}`, { id: bcToastId, duration: 12000 });
