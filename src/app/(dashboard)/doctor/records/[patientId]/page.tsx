@@ -109,8 +109,8 @@ export default function DoctorRecordsPage() {
             <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
               <ClipboardList className="w-4 h-4 text-slate-400" /> Riwayat Rekam Medis
             </h2>
-            <SOAPHistoryCard         notes={soapNotes} />
-            <DoctorHistoryCard       notes={doctorNotes} />
+            <SOAPHistoryCard   notes={soapNotes} />
+            <DoctorHistoryCard notes={doctorNotes} onEdit={(id) => router.push(`/doctor/emr/${patientId}/edit/${id}`)} />
             <PrescriptionHistoryCard prescriptions={prescriptions} />
           </div>
         ) : (

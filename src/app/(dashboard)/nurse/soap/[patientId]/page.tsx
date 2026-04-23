@@ -177,8 +177,8 @@ export default function SOAPPage() {
               <ClipboardList className="w-4 h-4 text-slate-400" /> Riwayat Rekam Medis
             </h2>
 
-            <SOAPHistoryCard         notes={soapNotes} />
-            <DoctorHistoryCard       notes={doctorNotes} />
+            <SOAPHistoryCard   notes={soapNotes}   onEdit={(id) => router.push(`/nurse/soap/${patientId}/edit/${id}`)} />
+            <DoctorHistoryCard notes={doctorNotes} />
             <PrescriptionHistoryCard prescriptions={prescriptions} />
           </div>
         )}

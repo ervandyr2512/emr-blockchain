@@ -15,7 +15,7 @@
 import React, { useState } from "react";
 import {
   ChevronDown, ChevronUp, ClipboardList, UserCheck,
-  Pill, FlaskConical, Link as LinkIcon, PackageCheck, Clock,
+  Pill, FlaskConical, Link as LinkIcon, PackageCheck, Clock, Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
@@ -75,7 +75,13 @@ const RX_STATUS_LABEL: Record<string, { label: string; color: string }> = {
 
 // ── SOAP history card ─────────────────────────────────────────────────────────
 
-export function SOAPHistoryCard({ notes }: { notes: SOAPNote[] }) {
+export function SOAPHistoryCard({
+  notes,
+  onEdit,
+}: {
+  notes: SOAPNote[];
+  onEdit?: (noteId: string) => void;
+}) {
   const allIds = notes.map((n) => n.id);
   const [openIds, setOpenIds] = useState<Set<string>>(
     () => new Set(notes[0]?.id ? [notes[0].id] : [])
@@ -146,6 +152,18 @@ export function SOAPHistoryCard({ notes }: { notes: SOAPNote[] }) {
                   </div>
 
                   {n.blockchainTxHash && <TxHashRow hash={n.blockchainTxHash} />}
+
+                  {onEdit && (
+                    <div className="pt-1 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(n.id)}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" /> Edit SOAP Ini
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -158,7 +176,13 @@ export function SOAPHistoryCard({ notes }: { notes: SOAPNote[] }) {
 
 // ── Doctor notes history card ─────────────────────────────────────────────────
 
-export function DoctorHistoryCard({ notes }: { notes: DoctorNote[] }) {
+export function DoctorHistoryCard({
+  notes,
+  onEdit,
+}: {
+  notes: DoctorNote[];
+  onEdit?: (noteId: string) => void;
+}) {
   const allIds = notes.map((n) => n.id);
   const [openIds, setOpenIds] = useState<Set<string>>(
     () => new Set(notes[0]?.id ? [notes[0].id] : [])
@@ -283,6 +307,18 @@ export function DoctorHistoryCard({ notes }: { notes: DoctorNote[] }) {
                   )}
 
                   {n.blockchainTxHash && <TxHashRow hash={n.blockchainTxHash} />}
+
+                  {onEdit && (
+                    <div className="pt-1 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(n.id)}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-200 px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" /> Edit Catatan Ini
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

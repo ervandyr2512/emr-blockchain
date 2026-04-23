@@ -214,6 +214,23 @@ export async function getAllSOAPNotes(emrId: string): Promise<SOAPNote[]> {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
+export async function getSOAPNote(emrId: string, noteId: string): Promise<SOAPNote | null> {
+  const snap = await get(ref(db, `soap_notes/${emrId}/${noteId}`));
+  if (!snap.exists()) return null;
+  return { ...snap.val() as SOAPNote, id: noteId };
+}
+
+export async function updateSOAPNote(
+  emrId: string,
+  noteId: string,
+  data: Partial<SOAPNote>
+): Promise<void> {
+  await update(ref(db, `soap_notes/${emrId}/${noteId}`), {
+    ...data,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
 // ── Doctor Notes ─────────────────────────────────────────────────────────────
 
 export async function saveDoctorNote(note: DoctorNote): Promise<string> {
@@ -234,6 +251,23 @@ export async function getLatestDoctorNote(emrId: string): Promise<DoctorNote | n
   return notes.sort((a, b) =>
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )[0] ?? null;
+}
+
+export async function getDoctorNote(emrId: string, noteId: string): Promise<DoctorNote | null> {
+  const snap = await get(ref(db, `doctor_notes/${emrId}/${noteId}`));
+  if (!snap.exists()) return null;
+  return { ...snap.val() as DoctorNote, id: noteId };
+}
+
+export async function updateDoctorNote(
+  emrId: string,
+  noteId: string,
+  data: Partial<DoctorNote>
+): Promise<void> {
+  await update(ref(db, `doctor_notes/${emrId}/${noteId}`), {
+    ...data,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 export async function getAllDoctorNotes(emrId: string): Promise<DoctorNote[]> {
