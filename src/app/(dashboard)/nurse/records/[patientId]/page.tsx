@@ -28,8 +28,7 @@ import {
   getPrescriptionsByEmrId,
 } from "@/lib/emr";
 import type { Patient, SOAPNote, DoctorNote, Prescription } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
+import { safeFormat } from "@/lib/dateUtils";
 
 export default function NurseRecordsPage() {
   const { patientId } = useParams<{ patientId: string }>();
@@ -98,7 +97,7 @@ export default function NurseRecordsPage() {
             </span>
             <span>
               <span className="font-semibold text-primary-800">Terdaftar:</span>{" "}
-              {format(new Date(patient.createdAt), "dd MMM yyyy", { locale: localeId })}
+              {safeFormat(patient.createdAt, "dd MMM yyyy")}
             </span>
           </div>
         </Card>

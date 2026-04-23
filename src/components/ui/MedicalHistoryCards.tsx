@@ -18,9 +18,8 @@ import {
   Pill, FlaskConical, Link as LinkIcon, PackageCheck, Clock, Pencil,
   ShieldCheck,
 } from "lucide-react";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 import type { SOAPNote, DoctorNote, Prescription, VitalSigns, BlockchainTrailEntry } from "@/types";
+import { safeFormat } from "@/lib/dateUtils";
 
 // ── Micro-components ─────────────────────────────────────────────────────────
 
@@ -34,13 +33,14 @@ function VitalItem({ label, value }: { label: string; value: string }) {
 }
 
 function VitalsGrid({ v }: { v: VitalSigns }) {
+  if (!v) return null;
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-1.5">
-      <VitalItem label="Tekanan Darah"  value={`${v.bloodPressure} mmHg`} />
-      <VitalItem label="Denyut Jantung" value={`${v.heartRate} bpm`} />
-      <VitalItem label="Suhu Tubuh"     value={`${v.temperature} °C`} />
-      <VitalItem label="Laju Nafas"     value={`${v.respiratoryRate} x/mnt`} />
-      <VitalItem label="SpO₂"           value={`${v.oxygenSaturation} %`} />
+      <VitalItem label="Tekanan Darah"  value={v.bloodPressure    ? `${v.bloodPressure} mmHg`  : "—"} />
+      <VitalItem label="Denyut Jantung" value={v.heartRate        ? `${v.heartRate} bpm`        : "—"} />
+      <VitalItem label="Suhu Tubuh"     value={v.temperature      ? `${v.temperature} °C`       : "—"} />
+      <VitalItem label="Laju Nafas"     value={v.respiratoryRate  ? `${v.respiratoryRate} x/mnt`: "—"} />
+      <VitalItem label="SpO₂"           value={v.oxygenSaturation ? `${v.oxygenSaturation} %`   : "—"} />
       {v.weight && <VitalItem label="Berat Badan"  value={`${v.weight} kg`} />}
       {v.height && <VitalItem label="Tinggi Badan" value={`${v.height} cm`} />}
     </div>
@@ -106,10 +106,7 @@ function BlockchainTrailSection({
         {trails.length > 0 && (
           <div className="space-y-2 pt-0.5">
             {trails.map((entry, i) => (
-              <div
-                key={i}
-                className="pl-2.5 border-l-2 border-green-300 space-y-0.5 text-[11px]"
-              >
+              <div key={i} className="pl-2.5 border-l-2 border-green-300 space-y-0.5 text-[11px]">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span
                     className={`font-bold px-1.5 py-0.5 rounded-full text-[10px] ${
@@ -125,10 +122,7 @@ function BlockchainTrailSection({
                   )}
                   {entry.timestamp && (
                     <span className="text-slate-400">
-                      ·{" "}
-                      {format(new Date(entry.timestamp), "dd MMM yyyy · HH:mm", {
-                        locale: localeId,
-                      })}
+                      · {safeFormat(entry.timestamp, "dd MMM yyyy · HH:mm")}
                     </span>
                   )}
                 </div>
@@ -169,7 +163,6 @@ export function SOAPHistoryCard({
   onEdit?: (noteId: string) => void;
 }) {
   const allIds = notes.map((n) => n.id);
-  // Default: all collapsed
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const toggle = (id: string) =>
     setOpenIds((prev) => {
@@ -177,9 +170,8 @@ export function SOAPHistoryCard({
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  const allOpen = allIds.length > 0 && allIds.every((id) => openIds.has(id));
-  const toggleAll = () =>
-    setOpenIds(allOpen ? new Set() : new Set(allIds));
+  const allOpen    = allIds.length > 0 && allIds.every((id) => openIds.has(id));
+  const toggleAll  = () => setOpenIds(allOpen ? new Set() : new Set(allIds));
   if (notes.length === 0) return null;
 
   return (
@@ -199,8 +191,13 @@ export function SOAPHistoryCard({
 
       <div className="divide-y divide-slate-100">
         {notes.map((n) => {
-          const open    = openIds.has(n.id);
-          const edited  = !!n.updatedAt && n.updatedAt !== n.createdAt;
+          const open   = openIds.has(n.id);
+          const edited = !!n.updatedAt && n.updatedAt !== n.createdAt;
+          // Primary timestamp to display: updatedAt if edited, else createdAt
+          const displayTime = safeFormat(
+            edited && n.updatedAt ? n.updatedAt : n.createdAt,
+            "dd MMM yyyy · HH:mm"
+          );
           return (
             <div key={n.id} className={open ? "bg-amber-50/40" : "bg-white"}>
               <button
@@ -210,7 +207,7 @@ export function SOAPHistoryCard({
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 flex flex-wrap items-center gap-1.5">
-                    {format(new Date(edited && n.updatedAt ? n.updatedAt : n.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                    {displayTime}
                     {edited && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
                         ✏️ Diperbarui
@@ -218,9 +215,9 @@ export function SOAPHistoryCard({
                     )}
                   </p>
                   <p className="text-xs text-slate-500 truncate mt-0.5">
-                    {n.nurseName}
+                    {n.nurseName ?? ""}
                     {edited
-                      ? ` · dibuat ${format(new Date(n.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}`
+                      ? ` · dibuat ${safeFormat(n.createdAt, "dd MMM yyyy · HH:mm")}`
                       : ""}
                     {n.subjective
                       ? ` · "${n.subjective.slice(0, 60)}${n.subjective.length > 60 ? "…" : ""}"`
@@ -234,16 +231,18 @@ export function SOAPHistoryCard({
 
               {open && (
                 <div className="px-4 pb-5 space-y-3">
-                  <SOAPField label="S — Subjective (Keluhan Pasien)"     value={n.subjective} />
-                  <SOAPField label="A — Assessment (Penilaian Perawat)"  value={n.assessment} />
-                  <SOAPField label="P — Plan (Rencana Tindakan Perawat)" value={n.plan} />
+                  <SOAPField label="S — Subjective (Keluhan Pasien)"     value={n.subjective ?? ""} />
+                  <SOAPField label="A — Assessment (Penilaian Perawat)"  value={n.assessment ?? ""} />
+                  <SOAPField label="P — Plan (Rencana Tindakan Perawat)" value={n.plan       ?? ""} />
 
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                      O — Objective (Tanda-Tanda Vital)
-                    </p>
-                    <VitalsGrid v={n.objective} />
-                  </div>
+                  {n.objective && (
+                    <div>
+                      <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                        O — Objective (Tanda-Tanda Vital)
+                      </p>
+                      <VitalsGrid v={n.objective} />
+                    </div>
+                  )}
 
                   <BlockchainTrailSection
                     emrId={n.emrId}
@@ -282,7 +281,6 @@ export function DoctorHistoryCard({
   onEdit?: (noteId: string) => void;
 }) {
   const allIds = notes.map((n) => n.id);
-  // Default: all collapsed
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const toggle = (id: string) =>
     setOpenIds((prev) => {
@@ -290,9 +288,8 @@ export function DoctorHistoryCard({
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  const allOpen = allIds.length > 0 && allIds.every((id) => openIds.has(id));
-  const toggleAll = () =>
-    setOpenIds(allOpen ? new Set() : new Set(allIds));
+  const allOpen   = allIds.length > 0 && allIds.every((id) => openIds.has(id));
+  const toggleAll = () => setOpenIds(allOpen ? new Set() : new Set(allIds));
   if (notes.length === 0) return null;
 
   return (
@@ -323,7 +320,7 @@ export function DoctorHistoryCard({
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 flex flex-wrap items-center gap-1.5">
-                    {format(new Date(n.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                    {safeFormat(n.createdAt, "dd MMM yyyy · HH:mm")}
                     {n.workingDiagnosis && (
                       <span className="text-xs font-normal text-primary-700 bg-primary-100 px-2 py-0.5 rounded-full truncate max-w-[220px]">
                         {n.workingDiagnosis.length > 45
@@ -338,9 +335,9 @@ export function DoctorHistoryCard({
                     )}
                   </p>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Dr. {n.doctorName}
+                    {n.doctorName ? `Dr. ${n.doctorName}` : "—"}
                     {edited && n.updatedAt
-                      ? ` · diperbarui ${format(new Date(n.updatedAt), "dd MMM yyyy · HH:mm", { locale: localeId })}`
+                      ? ` · diperbarui ${safeFormat(n.updatedAt, "dd MMM yyyy · HH:mm")}`
                       : ""}
                   </p>
                 </div>
@@ -357,18 +354,20 @@ export function DoctorHistoryCard({
                     {n.chiefComplaint        && <SOAPField label="Keluhan Utama"           value={n.chiefComplaint} />}
                     {n.historyPresentIllness && <SOAPField label="Riwayat Penyakit Kini"   value={n.historyPresentIllness} />}
                     {n.pastMedicalHistory    && <SOAPField label="Riwayat Penyakit Dahulu" value={n.pastMedicalHistory} />}
-                    {n.surgicalHistory       && <SOAPField label="Riwayat Operasi"          value={n.surgicalHistory} />}
-                    {n.medicationHistory     && <SOAPField label="Riwayat Obat-obatan"      value={n.medicationHistory} />}
-                    {n.allergy               && <SOAPField label="Alergi"                   value={n.allergy} />}
+                    {n.surgicalHistory       && <SOAPField label="Riwayat Operasi"         value={n.surgicalHistory} />}
+                    {n.medicationHistory     && <SOAPField label="Riwayat Obat-obatan"     value={n.medicationHistory} />}
+                    {n.allergy               && <SOAPField label="Alergi"                  value={n.allergy} />}
                   </div>
 
                   {/* Vitals */}
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                      Tanda-Tanda Vital (saat pemeriksaan)
-                    </p>
-                    <VitalsGrid v={n.vitalSigns} />
-                  </div>
+                  {n.vitalSigns && (
+                    <div>
+                      <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                        Tanda-Tanda Vital (saat pemeriksaan)
+                      </p>
+                      <VitalsGrid v={n.vitalSigns} />
+                    </div>
+                  )}
 
                   {/* Physical exam */}
                   {n.physicalExamination && (
@@ -445,7 +444,6 @@ export function DoctorHistoryCard({
 
 export function PrescriptionHistoryCard({ prescriptions }: { prescriptions: Prescription[] }) {
   const allIds = prescriptions.map((rx) => rx.id);
-  // Default: all collapsed
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const toggle = (id: string) =>
     setOpenIds((prev) => {
@@ -453,9 +451,8 @@ export function PrescriptionHistoryCard({ prescriptions }: { prescriptions: Pres
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  const allOpen = allIds.length > 0 && allIds.every((id) => openIds.has(id));
-  const toggleAll = () =>
-    setOpenIds(allOpen ? new Set() : new Set(allIds));
+  const allOpen   = allIds.length > 0 && allIds.every((id) => openIds.has(id));
+  const toggleAll = () => setOpenIds(allOpen ? new Set() : new Set(allIds));
   if (prescriptions.length === 0) return null;
 
   return (
@@ -475,7 +472,7 @@ export function PrescriptionHistoryCard({ prescriptions }: { prescriptions: Pres
 
       <div className="divide-y divide-slate-100">
         {prescriptions.map((rx) => {
-          const open = openIds.has(rx.id);
+          const open      = openIds.has(rx.id);
           const statusCfg = RX_STATUS_LABEL[rx.status] ?? { label: rx.status, color: "bg-slate-100 text-slate-600" };
           return (
             <div key={rx.id} className={open ? "bg-teal-50/30" : "bg-white"}>
@@ -486,13 +483,13 @@ export function PrescriptionHistoryCard({ prescriptions }: { prescriptions: Pres
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 flex flex-wrap items-center gap-2">
-                    {format(new Date(rx.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                    {safeFormat(rx.createdAt, "dd MMM yyyy · HH:mm")}
                     <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${statusCfg.color}`}>
                       {statusCfg.label}
                     </span>
                   </p>
                   <p className="text-xs text-slate-500">
-                    Dr. {rx.doctorName}
+                    {rx.doctorName ? `Dr. ${rx.doctorName}` : "—"}
                     {rx.medications?.length
                       ? ` · ${rx.medications.length} obat: ${rx.medications.map(m => m.name).join(", ").slice(0, 60)}${rx.medications.map(m => m.name).join(", ").length > 60 ? "…" : ""}`
                       : ""}
@@ -541,7 +538,7 @@ export function PrescriptionHistoryCard({ prescriptions }: { prescriptions: Pres
                       <PackageCheck className="w-3.5 h-3.5 flex-shrink-0" />
                       <span>
                         Diserahkan oleh <b>{rx.pharmacistName ?? "Apoteker"}</b> pada{" "}
-                        {format(new Date(rx.dispensedAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                        {safeFormat(rx.dispensedAt, "dd MMM yyyy · HH:mm")}
                       </span>
                     </div>
                   )}
