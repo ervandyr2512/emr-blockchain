@@ -132,45 +132,69 @@ export function Sidebar() {
       )}
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
-        <div className="flex-shrink-0 w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center shadow-sm">
-          <Building2 className="w-5 h-5 text-white" />
-        </div>
+      <div className={clsx(
+        "flex items-center border-b border-white/10 transition-all duration-300",
+        collapsed ? "justify-center py-4 px-2" : "gap-3 px-4 py-5"
+      )}>
         {!collapsed && (
-          <div>
-            <p className="font-bold text-sm leading-tight">EMR Blockchain</p>
-            <p className="text-xs text-white/50">Sistem Rekam Medis</p>
-          </div>
+          <>
+            <div className="flex-shrink-0 w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center shadow-sm">
+              <Building2 className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm leading-tight">EMR Blockchain</p>
+              <p className="text-xs text-white/50">Sistem Rekam Medis</p>
+            </div>
+          </>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto p-1 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+          title={collapsed ? "Perluas sidebar" : "Ciutkan sidebar"}
+          className={clsx(
+            "flex-shrink-0 p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors",
+            collapsed && "mx-auto"
+          )}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
 
       {/* Role badge */}
-      {!collapsed && profile && (
-        <div className="px-4 py-3 border-b border-white/10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-bold">
+      {profile && (
+        <div className={clsx(
+          "border-b border-white/10 transition-all duration-300",
+          collapsed ? "flex justify-center py-3 px-2" : "px-4 py-3"
+        )}>
+          <div className={clsx("flex items-center", collapsed ? "justify-center" : "gap-2.5")}>
+            <div
+              title={collapsed ? profile.name : undefined}
+              className="w-8 h-8 rounded-full bg-white/10 flex-shrink-0 flex items-center justify-center text-sm font-bold"
+            >
               {profile.name[0]?.toUpperCase()}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{profile.name}</p>
-              <span className={clsx("text-xs font-semibold px-2 py-0.5 rounded-full", rc.color)}>
-                {rc.label}
-              </span>
-            </div>
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{profile.name}</p>
+                <span className={clsx("text-xs font-semibold px-2 py-0.5 rounded-full", rc.color)}>
+                  {rc.label}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Nav */}
       <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
+        {/* Find the single most-specific matching nav item so that e.g.
+            /patient/emr highlights "Rekam Medis Saya" only, not "Dashboard Pasien" */}
+        {(() => {
+          const activeHref = navItems
+            .filter((i) => pathname === i.href || pathname.startsWith(i.href + "/"))
+            .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
+          return navItems.map((item) => {
+          const active = item.href === activeHref;
           return (
             <Link
               key={item.href}
@@ -187,7 +211,8 @@ export function Sidebar() {
               {!collapsed && <span className="truncate">{item.label}</span>}
             </Link>
           );
-        })}
+        });
+        })()}
       </nav>
 
       {/* Sign out */}

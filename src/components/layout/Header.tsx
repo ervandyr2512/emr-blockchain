@@ -157,13 +157,22 @@ export function Header({ title, subtitle }: HeaderProps) {
                 </div>
 
                 <div className="py-1">
-                  <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                  <button
+                    onClick={() => { setShowProfile(false); router.push("/profile?tab=profile"); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
                     <User className="w-4 h-4 text-slate-400" /> Profil Saya
                   </button>
-                  <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                  <button
+                    onClick={() => { setShowProfile(false); router.push("/profile?tab=settings"); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
                     <Settings className="w-4 h-4 text-slate-400" /> Pengaturan
                   </button>
-                  <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors">
+                  <button
+                    onClick={() => { setShowProfile(false); router.push("/profile?tab=security"); }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
                     <ShieldCheck className="w-4 h-4 text-slate-400" /> Keamanan Akun
                   </button>
                 </div>

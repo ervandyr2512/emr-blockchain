@@ -1,28 +1,21 @@
 {
   "rules": {
-    // ── Users ─────────────────────────────────────────────────────────────
     "users": {
       "$uid": {
-        // A user can read/write their own profile
-        ".read":  "auth != null && (auth.uid === $uid)",
-        ".write": "auth != null && (auth.uid === $uid)",
-        // Admin can read all profiles
-        ".read":  "auth != null"
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid"
       }
     },
-
-    // ── Patients ──────────────────────────────────────────────────────────
     "patients": {
-      ".read":  "auth != null",
+      ".read": "auth != null",
       ".write": "auth != null",
+      ".indexOn": ["uid", "status"],
       "$emrId": {
         ".validate": "newData.hasChildren(['emrId','uid','firstName','lastName','createdAt'])"
       }
     },
-
-    // ── SOAP Notes ────────────────────────────────────────────────────────
     "soap_notes": {
-      ".read":  "auth != null",
+      ".read": "auth != null",
       "$emrId": {
         ".write": "auth != null",
         "$noteId": {
@@ -30,10 +23,8 @@
         }
       }
     },
-
-    // ── Doctor Notes ──────────────────────────────────────────────────────
     "doctor_notes": {
-      ".read":  "auth != null",
+      ".read": "auth != null",
       "$emrId": {
         ".write": "auth != null",
         "$noteId": {
@@ -41,16 +32,12 @@
         }
       }
     },
-
-    // ── Prescriptions ─────────────────────────────────────────────────────
     "prescriptions": {
-      ".read":  "auth != null",
+      ".read": "auth != null",
       ".write": "auth != null"
     },
-
-    // ── Counters (EMR ID generator) ────────────────────────────────────────
     "counters": {
-      ".read":  "auth != null",
+      ".read": "auth != null",
       ".write": "auth != null"
     }
   }

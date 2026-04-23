@@ -18,8 +18,14 @@ import { Input, Select } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Spinner } from "@/components/ui/Spinner";
 import { getAllPatients, assignPatientDepartment } from "@/lib/emr";
-import { blockchainAssignDepartment } from "@/lib/blockchain";
+import {
+  blockchainAssignDepartmentFull,
+  getBlockchainStatus,
+  extractErrorMessage,
+  type BlockchainStatus,
+} from "@/lib/blockchain";
 import { sha256 } from "@/lib/hash";
+import { BlockchainStatusPanel } from "@/components/ui/BlockchainStatusPanel";
 import { useAuth } from "@/hooks/useAuth";
 import type { Patient, Department } from "@/types";
 import { DEPARTMENTS } from "@/types";
@@ -39,9 +45,16 @@ export default function AdminPatientsPage() {
   const [department, setDepartment]     = useState<string>("");
   const [assigning, setAssigning]       = useState(false);
 
+  // Blockchain pre-flight status
+  const [bcStatus,   setBcStatus]       = useState<BlockchainStatus | null>(null);
+  const [bcChecking, setBcChecking]     = useState(false);
+
   const load = () => {
     setLoading(true);
-    getAllPatients().then((p) => { setPatients(p); setLoading(false); });
+    getAllPatients()
+      .then((p) => setPatients(p))
+      .catch((err) => console.error("[AdminPatients]", err))
+      .finally(() => setLoading(false));
   };
   useEffect(load, []);
 
@@ -57,33 +70,55 @@ export default function AdminPatientsPage() {
   const openAssign = (p: Patient) => {
     setSelected(p);
     setDepartment(p.department ?? "");
+    setBcStatus(null);
     setAssignModal(true);
+    // Kick off pre-flight check (no MetaMask popup — uses eth_accounts)
+    setBcChecking(true);
+    getBlockchainStatus()
+      .then(setBcStatus)
+      .catch(() => setBcStatus(null))
+      .finally(() => setBcChecking(false));
   };
 
   const handleAssign = async () => {
     if (!selected || !department) { toast.error("Pilih poli terlebih dahulu."); return; }
     setAssigning(true);
+
+    // Hash the assignment data for blockchain
+    const payload  = { emrId: selected.emrId, department, assignedBy: profile?.uid, timestamp: new Date().toISOString() };
+    const dataHash = await sha256(payload);
+
+    // ── Full blockchain flow with step-by-step toasts ─────────────────────
+    let txHash: string | undefined;
+    const blockchainToastId = toast.loading("Memulai transaksi blockchain…");
     try {
-      // Hash the assignment data for blockchain
-      const payload   = { emrId: selected.emrId, department, assignedBy: profile?.uid, timestamp: new Date().toISOString() };
-      const dataHash  = await sha256(payload);
+      txHash = await blockchainAssignDepartmentFull(
+        selected.emrId,
+        dataHash,
+        (msg) => toast.loading(msg, { id: blockchainToastId })
+      );
+      toast.success("Transaksi blockchain berhasil! ✅", { id: blockchainToastId });
+    } catch (blockchainErr: unknown) {
+      console.error("[Blockchain] Assign department error:", blockchainErr);
+      const errMsg = extractErrorMessage(blockchainErr);
+      toast.error(`⚠️ Blockchain gagal: ${errMsg}`, { id: blockchainToastId, duration: 12000 });
+      // Refresh pre-flight status to show updated wallet/role info
+      getBlockchainStatus().then(setBcStatus).catch(() => {});
+      // Don't return — save to Firebase anyway
+    }
 
-      // Write to blockchain (MetaMask prompt)
-      let txHash: string | undefined;
-      try {
-        txHash = await blockchainAssignDepartment(selected.emrId, dataHash);
-      } catch {
-        toast("⚠️ Blockchain tidak tersedia, data disimpan ke Firebase saja.", { icon: "ℹ️" });
-      }
-
-      // Update Firebase
+    // ── Always save to Firebase ────────────────────────────────────────────
+    try {
       await assignPatientDepartment(selected.emrId, department as Department, txHash);
-
-      toast.success(`${selected.firstName} berhasil ditugaskan ke Poli ${department}`);
+      toast.success(
+        txHash
+          ? `${selected.firstName} ditugaskan ke Poli ${department} & dicatat di blockchain.`
+          : `${selected.firstName} ditugaskan ke Poli ${department} (Firebase saja).`
+      );
       setAssignModal(false);
       load();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Gagal menugaskan poli");
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan penugasan poli");
     } finally {
       setAssigning(false);
     }
@@ -216,10 +251,7 @@ export default function AdminPatientsPage() {
               options={DEPARTMENTS.map((d) => ({ value: d, label: d }))}
               required
             />
-            <p className="text-xs text-slate-400 flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-primary-500 rounded-full" />
-              Penugasan ini akan dicatat sebagai transaksi blockchain (memerlukan MetaMask).
-            </p>
+            <BlockchainStatusPanel status={bcStatus} loading={bcChecking} />
           </div>
         )}
       </Modal>

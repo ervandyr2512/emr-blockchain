@@ -26,11 +26,12 @@ export default function NurseDashboard() {
   const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
-    getAllPatients().then((p) => {
-      // Nurse sees patients that are assigned but haven't been examined yet
-      setPatients(p.filter((pt) => pt.status === "assigned" || pt.status === "in_examination"));
-      setLoading(false);
-    });
+    getAllPatients()
+      .then((p) => {
+        setPatients(p.filter((pt) => pt.status === "assigned" || pt.status === "in_examination"));
+      })
+      .catch((err) => console.error("[NurseDashboard]", err))
+      .finally(() => setLoading(false));
   }, []);
 
   return (

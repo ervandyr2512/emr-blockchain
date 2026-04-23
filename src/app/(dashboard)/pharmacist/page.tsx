@@ -17,7 +17,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { Modal } from "@/components/ui/Modal";
 import { useAuth } from "@/hooks/useAuth";
 import { getPendingPrescriptions, updatePrescriptionStatus } from "@/lib/emr";
-import { blockchainFulfillPrescription } from "@/lib/blockchain";
+import { blockchainFulfillPrescriptionFull, extractErrorMessage } from "@/lib/blockchain";
 import { sha256 } from "@/lib/hash";
 import type { Prescription } from "@/types";
 import { format } from "date-fns";
@@ -33,7 +33,10 @@ export default function PharmacistDashboard() {
 
   const load = () => {
     setLoading(true);
-    getPendingPrescriptions().then((p) => { setPrescriptions(p); setLoading(false); });
+    getPendingPrescriptions()
+      .then((p) => setPrescriptions(p))
+      .catch((err) => console.error("[PharmacistDashboard]", err))
+      .finally(() => setLoading(false));
   };
   useEffect(load, []);
 
@@ -44,11 +47,19 @@ export default function PharmacistDashboard() {
       const dataHash = await sha256({ ...selected, dispensedBy: profile.uid, timestamp: new Date().toISOString() });
 
       let hash = "";
+      const bcToastId = toast.loading("Memulai transaksi blockchain…");
       try {
-        hash = await blockchainFulfillPrescription(selected.emrId, dataHash);
+        hash = await blockchainFulfillPrescriptionFull(
+          selected.emrId,
+          dataHash,
+          (msg) => toast.loading(msg, { id: bcToastId })
+        );
         setTxHash(hash);
-      } catch {
-        toast("Blockchain tidak tersedia. Status disimpan di Firebase.", { icon: "⚠️" });
+        toast.success("Resep berhasil direkam di blockchain! ✅", { id: bcToastId });
+      } catch (bcErr: unknown) {
+        console.error("[Blockchain Rx]", bcErr);
+        const errMsg = extractErrorMessage(bcErr);
+        toast.error(`⚠️ Blockchain gagal: ${errMsg}`, { id: bcToastId, duration: 12000 });
       }
 
       await updatePrescriptionStatus(

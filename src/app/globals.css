@@ -10,10 +10,11 @@
   html {
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-slate-50 text-slate-800;
+    @apply bg-white text-slate-800;
   }
 
   /* Custom scrollbar */

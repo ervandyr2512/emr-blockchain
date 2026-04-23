@@ -33,7 +33,10 @@ export default function DoctorPatientsPage() {
   const [filter,   setFilter]   = useState<PatientStatus | "all">("all");
 
   useEffect(() => {
-    getAllPatients().then((p) => { setPatients(p); setLoading(false); });
+    getAllPatients()
+      .then((p) => setPatients(p))
+      .catch((err) => console.error("[DoctorPatients]", err))
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {

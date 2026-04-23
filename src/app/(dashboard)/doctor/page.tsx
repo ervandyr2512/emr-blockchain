@@ -26,10 +26,12 @@ export default function DoctorDashboard() {
   const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
-    getAllPatients().then((all) => {
-      setPatients(all.filter((p) => p.status === "assigned" || p.status === "in_examination"));
-      setLoading(false);
-    });
+    getAllPatients()
+      .then((all) => {
+        setPatients(all.filter((p) => p.status === "assigned" || p.status === "in_examination"));
+      })
+      .catch((err) => console.error("[DoctorDashboard]", err))
+      .finally(() => setLoading(false));
   }, []);
 
   const toExamine  = patients.filter((p) => p.status === "assigned").length;

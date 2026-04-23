@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, TextArea } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { getPatient, saveSOAPNote, getLatestSOAP } from "@/lib/emr";
-import { blockchainSubmitSOAP } from "@/lib/blockchain";
+import { blockchainSubmitSOAPFull, extractErrorMessage } from "@/lib/blockchain";
 import { sha256 } from "@/lib/hash";
 import { useAuth } from "@/hooks/useAuth";
 import type { Patient, SOAPNote, VitalSigns } from "@/types";
@@ -49,11 +49,10 @@ export default function SOAPPage() {
   });
 
   useEffect(() => {
-    Promise.all([getPatient(patientId), getLatestSOAP(patientId)]).then(([p, s]) => {
-      setPatient(p);
-      setLastSOAP(s);
-      setLoading(false);
-    });
+    Promise.all([getPatient(patientId), getLatestSOAP(patientId)])
+      .then(([p, s]) => { setPatient(p); setLastSOAP(s); })
+      .catch((err) => console.error("[NurseSOAP]", err))
+      .finally(() => setLoading(false));
   }, [patientId]);
 
   const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -89,17 +88,24 @@ export default function SOAPPage() {
       // 1. Hash the data
       const dataHash = await sha256(note);
 
-      // 2. Save to Firebase
+      // 2. Save to Firebase first
       await saveSOAPNote({ ...note, blockchainTxHash: "" });
 
-      // 3. Record on blockchain
+      // 3. Record on blockchain (full flow: MetaMask → Sepolia → selfRegister → registerEMR → submit)
       let hash = "";
+      const bcToastId = toast.loading("Memulai transaksi blockchain…");
       try {
-        hash = await blockchainSubmitSOAP(patientId, dataHash);
+        hash = await blockchainSubmitSOAPFull(
+          patientId,
+          dataHash,
+          (msg) => toast.loading(msg, { id: bcToastId })
+        );
         setTxHash(hash);
-        toast.success("SOAP berhasil disimpan & direkam di blockchain!");
-      } catch {
-        toast("SOAP disimpan di Firebase. Blockchain tidak tersedia.", { icon: "⚠️" });
+        toast.success("SOAP berhasil direkam di blockchain! ✅", { id: bcToastId });
+      } catch (bcErr: unknown) {
+        console.error("[Blockchain SOAP]", bcErr);
+        const errMsg = extractErrorMessage(bcErr);
+        toast.error(`⚠️ Blockchain gagal: ${errMsg}`, { id: bcToastId, duration: 12000 });
       }
 
       toast.success(`SOAP untuk ${patient?.firstName} berhasil disimpan.`);

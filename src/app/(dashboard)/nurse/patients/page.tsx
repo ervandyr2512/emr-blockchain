@@ -25,12 +25,12 @@ export default function NursePatientsPage() {
   const [search,   setSearch]   = useState("");
 
   useEffect(() => {
-    getAllPatients().then((p) => {
-      setPatients(p.filter((pt) =>
+    getAllPatients()
+      .then((p) => setPatients(p.filter((pt) =>
         pt.status === "assigned" || pt.status === "in_examination" || pt.status === "completed"
-      ));
-      setLoading(false);
-    });
+      )))
+      .catch((err) => console.error("[NursePatients]", err))
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {

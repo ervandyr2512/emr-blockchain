@@ -26,7 +26,10 @@ export default function AdminDashboard() {
   const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
-    getAllPatients().then((p) => { setPatients(p); setLoading(false); });
+    getAllPatients()
+      .then((p) => setPatients(p))
+      .catch((err) => console.error("[AdminDashboard]", err))
+      .finally(() => setLoading(false));
   }, []);
 
   const total      = patients.length;

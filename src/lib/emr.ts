@@ -95,11 +95,61 @@ export async function getPatient(emrId: string): Promise<Patient | null> {
 }
 
 export async function getPatientByUid(uid: string): Promise<Patient | null> {
-  const q    = query(ref(db, "patients"), orderByChild("uid"), equalTo(uid));
-  const snap = await get(q);
-  if (!snap.exists()) return null;
-  const entries = Object.values(snap.val() as Record<string, Patient>);
-  return entries[0] ?? null;
+  // ── Attempt 1: Firebase SDK ordered query ───────────────────────────────
+  try {
+    const q    = query(ref(db, "patients"), orderByChild("uid"), equalTo(uid));
+    const snap = await get(q);
+    if (snap.exists()) {
+      const entries = Object.values(snap.val() as Record<string, Patient>);
+      const found   = entries[0] ?? null;
+      if (found) return found;
+    }
+  } catch (err) {
+    console.warn("[getPatientByUid] SDK query failed, trying REST:", err);
+  }
+
+  // ── Attempt 2: REST API with orderBy filter ─────────────────────────────
+  try {
+    const dbUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+    if (dbUrl) {
+      let url = `${dbUrl}/patients.json?orderBy="uid"&equalTo="${uid}"`;
+      try {
+        const token = await auth?.currentUser?.getIdToken();
+        if (token) url += `&auth=${token}`;
+      } catch { /* ignore */ }
+      const res  = await fetch(url);
+      const data = await res.json();
+      if (data && typeof data === "object" && !data.error) {
+        const entries = Object.values(data) as Patient[];
+        if (entries.length > 0) return entries[0];
+      }
+    }
+  } catch (err) {
+    console.warn("[getPatientByUid] REST ordered query failed, trying full scan:", err);
+  }
+
+  // ── Attempt 3: Full scan via REST (last resort) ─────────────────────────
+  try {
+    const dbUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+    if (dbUrl) {
+      let url = `${dbUrl}/patients.json`;
+      try {
+        const token = await auth?.currentUser?.getIdToken();
+        if (token) url += `?auth=${token}`;
+      } catch { /* ignore */ }
+      const res  = await fetch(url);
+      const data = await res.json();
+      if (data && typeof data === "object" && !data.error) {
+        const entries = Object.values(data) as Patient[];
+        const found   = entries.find((p) => p.uid === uid);
+        if (found) return found;
+      }
+    }
+  } catch (err) {
+    console.warn("[getPatientByUid] full scan failed:", err);
+  }
+
+  return null;
 }
 
 export async function getAllPatients(): Promise<Patient[]> {
@@ -200,6 +250,20 @@ export async function savePrescription(rx: Prescription): Promise<string> {
   const r    = ref(db, `prescriptions/${rx.emrId}`);
   const ref2 = await push(r, rx);
   return ref2.key!;
+}
+
+/** Get all prescriptions for a specific patient (by EMR ID). */
+export async function getPrescriptionsByEmrId(emrId: string): Promise<Prescription[]> {
+  try {
+    const snap = await get(ref(db, `prescriptions/${emrId}`));
+    if (!snap.exists()) return [];
+    return Object.values(snap.val() as Record<string, Prescription>).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  } catch (err) {
+    console.warn("[getPrescriptionsByEmrId]", err);
+    return [];
+  }
 }
 
 export async function getPendingPrescriptions(): Promise<Prescription[]> {

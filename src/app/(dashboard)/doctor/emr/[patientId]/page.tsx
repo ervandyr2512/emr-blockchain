@@ -19,7 +19,7 @@ import { Input, TextArea, Select } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { StatusBadge } from "@/components/ui/Badge";
 import { getPatient, getLatestSOAP, saveDoctorNote, savePrescription } from "@/lib/emr";
-import { blockchainSubmitDoctorNote } from "@/lib/blockchain";
+import { blockchainSubmitDoctorNoteFull, extractErrorMessage } from "@/lib/blockchain";
 import { sha256 } from "@/lib/hash";
 import { useAuth } from "@/hooks/useAuth";
 import type { Patient, SOAPNote, DoctorNote, SupportingExam, MedicationItem, Prescription, VitalSigns } from "@/types";
@@ -60,11 +60,10 @@ export default function DoctorEMRPage() {
   });
 
   useEffect(() => {
-    Promise.all([getPatient(patientId), getLatestSOAP(patientId)]).then(([p, s]) => {
-      setPatient(p);
-      if (s) { setSOAP(s); setVitals(s.objective); }
-      setLoading(false);
-    });
+    Promise.all([getPatient(patientId), getLatestSOAP(patientId)])
+      .then(([p, s]) => { setPatient(p); if (s) { setSOAP(s); setVitals(s.objective); } })
+      .catch((err) => console.error("[DoctorEMR]", err))
+      .finally(() => setLoading(false));
   }, [patientId]);
 
   const handle = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -135,13 +134,20 @@ export default function DoctorEMRPage() {
         toast("Resep telah diteruskan ke apoteker.", { icon: "💊" });
       }
 
-      // Blockchain
+      // Blockchain (full flow: MetaMask → Sepolia → selfRegister → registerEMR → submit)
+      const bcToastId = toast.loading("Memulai transaksi blockchain…");
       try {
-        const hash = await blockchainSubmitDoctorNote(patientId, dataHash);
+        const hash = await blockchainSubmitDoctorNoteFull(
+          patientId,
+          dataHash,
+          (msg) => toast.loading(msg, { id: bcToastId })
+        );
         setTxHash(hash);
-        toast.success("Catatan dokter direkam di blockchain!");
-      } catch {
-        toast("Blockchain tidak tersedia. Data tersimpan di Firebase.", { icon: "⚠️" });
+        toast.success("Catatan dokter berhasil direkam di blockchain! ✅", { id: bcToastId });
+      } catch (bcErr: unknown) {
+        console.error("[Blockchain DoctorNote]", bcErr);
+        const errMsg = extractErrorMessage(bcErr);
+        toast.error(`⚠️ Blockchain gagal: ${errMsg}`, { id: bcToastId, duration: 12000 });
       }
 
       toast.success("Pemeriksaan berhasil disimpan!");

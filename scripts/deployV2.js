@@ -34,14 +34,25 @@ async function main() {
     2
   );
 
-  // Write to frontend contract directory
-  const frontendPath = path.join(__dirname, "..", "frontend", "src", "lib", "contract");
-  fs.mkdirSync(frontendPath, { recursive: true });
-  fs.writeFileSync(path.join(frontendPath, "EMRv2.json"), output);
+  // Write to src/lib/contract (Next.js frontend, no "frontend/" prefix)
+  const contractPath = path.join(__dirname, "..", "src", "lib", "contract");
+  fs.mkdirSync(contractPath, { recursive: true });
+  fs.writeFileSync(path.join(contractPath, "EMRv2.json"), output);
+  console.log("  📄  ABI written to src/lib/contract/EMRv2.json");
 
-  console.log("  📄  ABI written to frontend/src/lib/contract/EMRv2.json");
-  console.log("\n  Add this to frontend/.env.local:");
-  console.log(`  NEXT_PUBLIC_CONTRACT_ADDRESS=${address}\n`);
+  // Also update .env.local automatically
+  const envLocalPath = path.join(__dirname, "..", ".env.local");
+  if (fs.existsSync(envLocalPath)) {
+    let envContent = fs.readFileSync(envLocalPath, "utf8");
+    envContent = envContent.replace(
+      /^NEXT_PUBLIC_CONTRACT_ADDRESS=.*/m,
+      `NEXT_PUBLIC_CONTRACT_ADDRESS=${address}`
+    );
+    fs.writeFileSync(envLocalPath, envContent);
+    console.log("  ✅  .env.local updated with new contract address");
+  }
+
+  console.log("\n  ✅  NEXT_PUBLIC_CONTRACT_ADDRESS=" + address + "\n");
 }
 
 main().catch((err) => {
