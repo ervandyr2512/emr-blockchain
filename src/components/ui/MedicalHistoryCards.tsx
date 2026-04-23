@@ -76,6 +76,7 @@ const RX_STATUS_LABEL: Record<string, { label: string; color: string }> = {
 // ── SOAP history card ─────────────────────────────────────────────────────────
 
 export function SOAPHistoryCard({ notes }: { notes: SOAPNote[] }) {
+  const allIds = notes.map((n) => n.id);
   const [openIds, setOpenIds] = useState<Set<string>>(
     () => new Set(notes[0]?.id ? [notes[0].id] : [])
   );
@@ -85,6 +86,9 @@ export function SOAPHistoryCard({ notes }: { notes: SOAPNote[] }) {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  const allOpen = allIds.every((id) => openIds.has(id));
+  const toggleAll = () =>
+    setOpenIds(allOpen ? new Set() : new Set(allIds));
   if (notes.length === 0) return null;
 
   return (
@@ -92,7 +96,14 @@ export function SOAPHistoryCard({ notes }: { notes: SOAPNote[] }) {
       <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border-b border-amber-100">
         <ClipboardList className="w-4 h-4 text-amber-500" />
         <span className="font-bold text-sm text-slate-800">Riwayat SOAP Perawat</span>
-        <span className="ml-auto text-xs text-slate-400">{notes.length} entri</span>
+        <span className="text-xs text-slate-400">{notes.length} entri</span>
+        <button
+          type="button"
+          onClick={toggleAll}
+          className="ml-auto text-xs text-amber-600 hover:text-amber-800 font-medium hover:underline transition-colors"
+        >
+          {allOpen ? "Tutup Semua" : "Buka Semua"}
+        </button>
       </div>
 
       <div className="divide-y divide-slate-100">
@@ -148,6 +159,7 @@ export function SOAPHistoryCard({ notes }: { notes: SOAPNote[] }) {
 // ── Doctor notes history card ─────────────────────────────────────────────────
 
 export function DoctorHistoryCard({ notes }: { notes: DoctorNote[] }) {
+  const allIds = notes.map((n) => n.id);
   const [openIds, setOpenIds] = useState<Set<string>>(
     () => new Set(notes[0]?.id ? [notes[0].id] : [])
   );
@@ -157,6 +169,9 @@ export function DoctorHistoryCard({ notes }: { notes: DoctorNote[] }) {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  const allOpen = allIds.every((id) => openIds.has(id));
+  const toggleAll = () =>
+    setOpenIds(allOpen ? new Set() : new Set(allIds));
   if (notes.length === 0) return null;
 
   return (
@@ -164,7 +179,14 @@ export function DoctorHistoryCard({ notes }: { notes: DoctorNote[] }) {
       <div className="flex items-center gap-2 px-4 py-3 bg-primary-50 border-b border-primary-100">
         <UserCheck className="w-4 h-4 text-primary-500" />
         <span className="font-bold text-sm text-slate-800">Riwayat Pemeriksaan Dokter</span>
-        <span className="ml-auto text-xs text-slate-400">{notes.length} entri</span>
+        <span className="text-xs text-slate-400">{notes.length} entri</span>
+        <button
+          type="button"
+          onClick={toggleAll}
+          className="ml-auto text-xs text-primary-600 hover:text-primary-800 font-medium hover:underline transition-colors"
+        >
+          {allOpen ? "Tutup Semua" : "Buka Semua"}
+        </button>
       </div>
 
       <div className="divide-y divide-slate-100">
@@ -274,6 +296,7 @@ export function DoctorHistoryCard({ notes }: { notes: DoctorNote[] }) {
 // ── Prescription history card ─────────────────────────────────────────────────
 
 export function PrescriptionHistoryCard({ prescriptions }: { prescriptions: Prescription[] }) {
+  const allIds = prescriptions.map((rx) => rx.id);
   const [openIds, setOpenIds] = useState<Set<string>>(
     () => new Set(prescriptions[0]?.id ? [prescriptions[0].id] : [])
   );
@@ -283,6 +306,9 @@ export function PrescriptionHistoryCard({ prescriptions }: { prescriptions: Pres
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  const allOpen = allIds.every((id) => openIds.has(id));
+  const toggleAll = () =>
+    setOpenIds(allOpen ? new Set() : new Set(allIds));
   if (prescriptions.length === 0) return null;
 
   return (
@@ -290,7 +316,14 @@ export function PrescriptionHistoryCard({ prescriptions }: { prescriptions: Pres
       <div className="flex items-center gap-2 px-4 py-3 bg-teal-50 border-b border-teal-100">
         <Pill className="w-4 h-4 text-teal-500" />
         <span className="font-bold text-sm text-slate-800">Riwayat Resep &amp; Pengobatan</span>
-        <span className="ml-auto text-xs text-slate-400">{prescriptions.length} resep</span>
+        <span className="text-xs text-slate-400">{prescriptions.length} resep</span>
+        <button
+          type="button"
+          onClick={toggleAll}
+          className="ml-auto text-xs text-teal-600 hover:text-teal-800 font-medium hover:underline transition-colors"
+        >
+          {allOpen ? "Tutup Semua" : "Buka Semua"}
+        </button>
       </div>
 
       <div className="divide-y divide-slate-100">
