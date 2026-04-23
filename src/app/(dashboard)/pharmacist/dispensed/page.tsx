@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
  * identity, medication details, and blockchain trail.
  */
 
+import { safeFormat } from "@/lib/dateUtils";
 import React, { useEffect, useState, useCallback } from "react";
 import {
   PackageCheck, User, ShieldCheck, Link as LinkIcon,
@@ -19,8 +20,6 @@ import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { getDispensedPrescriptions, getPatient } from "@/lib/emr";
 import type { Prescription, Patient } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -155,8 +154,8 @@ export default function PharmacistDispensedPage() {
                         <p className="text-xs text-slate-500 mt-0.5">
                           {rx.medications.length} obat ·{" "}
                           {rx.dispensedAt
-                            ? `Diserahkan ${format(new Date(rx.dispensedAt), "dd MMM yyyy · HH:mm", { locale: localeId })}`
-                            : `Dibuat ${format(new Date(rx.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}`
+                            ? `Diserahkan ${safeFormat(rx.dispensedAt, "dd MMM yyyy · HH:mm")}`
+                            : `Dibuat ${safeFormat(rx.createdAt, "dd MMM yyyy · HH:mm")}`
                           }
                           {rx.pharmacistName ? ` · Apoteker: ${rx.pharmacistName}` : ""}
                         </p>
@@ -227,7 +226,7 @@ export default function PharmacistDispensedPage() {
                             <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Waktu Penyerahan</p>
                             <p className="font-medium text-slate-700">
                               {rx.dispensedAt
-                                ? format(new Date(rx.dispensedAt), "dd MMM yyyy · HH:mm", { locale: localeId })
+                                ? safeFormat(rx.dispensedAt, "dd MMM yyyy · HH:mm")
                                 : "—"}
                             </p>
                           </div>
@@ -292,7 +291,7 @@ export default function PharmacistDispensedPage() {
                                   )}
                                   {rx.dispensedAt && (
                                     <span className="text-slate-400">
-                                      · {format(new Date(rx.dispensedAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                                      · {safeFormat(rx.dispensedAt, "dd MMM yyyy · HH:mm")}
                                     </span>
                                   )}
                                 </div>

@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
  * Admin Dashboard — System overview, stats, and quick actions.
  */
 
+import { safeFormat } from "@/lib/dateUtils";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Users, Activity, ClipboardList, ChevronRight, Plus, ShieldCheck } from "lucide-react";
@@ -17,8 +18,6 @@ import { Spinner } from "@/components/ui/Spinner";
 import { getAllPatients } from "@/lib/emr";
 import { useAuth } from "@/hooks/useAuth";
 import type { Patient } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 
 export default function AdminDashboard() {
   const { profile }       = useAuth();
@@ -123,7 +122,7 @@ export default function AdminDashboard() {
                       <td className="py-3 px-3 text-slate-500">{p.department ?? <span className="text-slate-300 italic">Belum</span>}</td>
                       <td className="py-3 px-3"><StatusBadge status={p.status} /></td>
                       <td className="py-3 px-3 text-slate-400 text-xs">
-                        {format(new Date(p.createdAt), "dd MMM yyyy", { locale: localeId })}
+                        {safeFormat(p.createdAt, "dd MMM yyyy")}
                       </td>
                       <td className="py-3 px-3">
                         <Link href={`/admin/patients/${p.emrId}`}>

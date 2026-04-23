@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
  * still awaiting admin approval (role = "pending_doctor").
  */
 
+import { safeFormat } from "@/lib/dateUtils";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Clock, CheckCircle2, XCircle, Stethoscope, LogOut, RefreshCw } from "lucide-react";
@@ -17,8 +18,6 @@ import { getDoctorApplication } from "@/lib/emr";
 import { signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/Button";
 import type { DoctorApplication } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 
 export default function PendingApprovalPage() {
   const router = useRouter();
@@ -135,7 +134,7 @@ export default function PendingApprovalPage() {
                   <div className="flex justify-between">
                     <span className="text-slate-500">Dikirim</span>
                     <span className="font-semibold text-slate-700">
-                      {format(new Date(application.submittedAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                      {safeFormat(application.submittedAt, "dd MMM yyyy · HH:mm")}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">

@@ -35,8 +35,7 @@ import { BlockchainStatusPanel } from "@/components/ui/BlockchainStatusPanel";
 import { useAuth } from "@/hooks/useAuth";
 import type { Patient, SOAPNote, DoctorNote, Prescription, Department } from "@/types";
 import { DEPARTMENTS } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
+import { safeFormat } from "@/lib/dateUtils";
 
 type Tab = "biodata" | "soap" | "doctor" | "resep";
 
@@ -254,7 +253,7 @@ export default function AdminPatientDetailPage() {
             <div className="flex flex-col items-end gap-2">
               <StatusBadge status={patient.status} />
               <p className="text-white/50 text-xs">
-                Daftar: {format(new Date(patient.createdAt), "dd MMM yyyy", { locale: localeId })}
+                Daftar: {safeFormat(patient.createdAt, "dd MMM yyyy")}
               </p>
             </div>
           </div>
@@ -344,7 +343,7 @@ export default function AdminPatientDetailPage() {
                   <div>
                     <p className="font-bold text-slate-800">{s.nurseName}</p>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {format(new Date(s.createdAt), "dd MMMM yyyy, HH:mm", { locale: localeId })}
+                      {safeFormat(s.createdAt, "dd MMMM yyyy, HH:mm")}
                     </p>
                   </div>
                   {expanded === `soap-${i}`
@@ -353,13 +352,15 @@ export default function AdminPatientDetailPage() {
                 </button>
                 {expanded === `soap-${i}` && (
                   <div className="border-t border-slate-100 px-5 py-5 space-y-4">
+                    {s.objective && (
                     <VitalGrid vitals={[
-                      { label: "TD",   value: s.objective.bloodPressure + " mmHg" },
-                      { label: "Nadi", value: s.objective.heartRate + " bpm" },
-                      { label: "Suhu", value: s.objective.temperature + " °C" },
-                      { label: "BB",   value: s.objective.weight + " kg" },
-                      { label: "SpO₂", value: s.objective.oxygenSaturation + "%" },
+                      { label: "TD",   value: s.objective.bloodPressure ? s.objective.bloodPressure + " mmHg" : "—" },
+                      { label: "Nadi", value: s.objective.heartRate ? s.objective.heartRate + " bpm" : "—" },
+                      { label: "Suhu", value: s.objective.temperature ? s.objective.temperature + " °C" : "—" },
+                      { label: "BB",   value: s.objective.weight ? s.objective.weight + " kg" : "—" },
+                      { label: "SpO₂", value: s.objective.oxygenSaturation ? s.objective.oxygenSaturation + "%" : "—" },
                     ]} color="teal" />
+                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <InfoBlock label="Subjektif"  value={s.subjective} />
                       <InfoBlock label="Assessment" value={s.assessment} />
@@ -390,7 +391,7 @@ export default function AdminPatientDetailPage() {
                       <span className="text-xs text-slate-400">{n.doctorName}</span>
                       <span className="text-slate-200">·</span>
                       <span className="text-xs text-slate-400">
-                        {format(new Date(n.createdAt), "dd MMMM yyyy, HH:mm", { locale: localeId })}
+                        {safeFormat(n.createdAt, "dd MMMM yyyy, HH:mm")}
                       </span>
                     </div>
                   </div>
@@ -400,13 +401,15 @@ export default function AdminPatientDetailPage() {
                 </button>
                 {expanded === `doc-${i}` && (
                   <div className="border-t border-slate-100 px-5 py-5 space-y-5">
+                    {n.vitalSigns && (
                     <VitalGrid vitals={[
-                      { label: "TD",   value: n.vitalSigns.bloodPressure + " mmHg" },
-                      { label: "Nadi", value: n.vitalSigns.heartRate + " bpm" },
-                      { label: "Suhu", value: n.vitalSigns.temperature + " °C" },
-                      { label: "RR",   value: n.vitalSigns.respiratoryRate + "x/mnt" },
-                      { label: "SpO₂", value: n.vitalSigns.oxygenSaturation + "%" },
+                      { label: "TD",   value: n.vitalSigns.bloodPressure ? n.vitalSigns.bloodPressure + " mmHg" : "—" },
+                      { label: "Nadi", value: n.vitalSigns.heartRate ? n.vitalSigns.heartRate + " bpm" : "—" },
+                      { label: "Suhu", value: n.vitalSigns.temperature ? n.vitalSigns.temperature + " °C" : "—" },
+                      { label: "RR",   value: n.vitalSigns.respiratoryRate ? n.vitalSigns.respiratoryRate + "x/mnt" : "—" },
+                      { label: "SpO₂", value: n.vitalSigns.oxygenSaturation ? n.vitalSigns.oxygenSaturation + "%" : "—" },
                     ]} color="blue" />
+                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <InfoBlock label="Keluhan Utama"         value={n.chiefComplaint} />
                       <InfoBlock label="Riwayat Penyakit"      value={n.historyPresentIllness} />
@@ -456,7 +459,7 @@ export default function AdminPatientDetailPage() {
                   <div>
                     <p className="font-bold text-slate-800">{rx.doctorName}</p>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {format(new Date(rx.createdAt), "dd MMMM yyyy", { locale: localeId })}
+                      {safeFormat(rx.createdAt, "dd MMMM yyyy")}
                     </p>
                   </div>
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
@@ -469,7 +472,7 @@ export default function AdminPatientDetailPage() {
                   </span>
                 </div>
                 <div className="space-y-2">
-                  {rx.medications.map((med: any, j: number) => (
+                  {(rx.medications ?? []).map((med: any, j: number) => (
                     <div key={j} className="flex items-start gap-3 bg-slate-50 rounded-xl p-3">
                       <div className="w-7 h-7 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Pill className="w-3.5 h-3.5 text-primary-600" />

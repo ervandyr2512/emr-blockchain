@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
  * Tab 2: Permohonan Dokter — review and approve/reject self-registered doctors
  */
 
+import { safeFormat } from "@/lib/dateUtils";
 import React, { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import {
@@ -32,8 +33,6 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { createNotification } from "@/lib/notifications";
 import type { UserRole, DoctorApplication, DoctorApplicationStatus } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -286,7 +285,7 @@ export default function AdminStaffPage() {
                             </p>
                             <p className="text-xs text-slate-500 mt-0.5">
                               {app.email} · {app.hospital} ·{" "}
-                              {format(new Date(app.submittedAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                              {safeFormat(app.submittedAt, "dd MMM yyyy · HH:mm")}
                             </p>
                           </div>
                           {open
@@ -337,7 +336,7 @@ export default function AdminStaffPage() {
                                   {app.reviewedBy && (
                                     <p className="text-xs text-red-400 mt-1">
                                       Oleh: {app.reviewedBy} ·{" "}
-                                      {app.reviewedAt && format(new Date(app.reviewedAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                                      {app.reviewedAt && safeFormat(app.reviewedAt, "dd MMM yyyy · HH:mm")}
                                     </p>
                                   )}
                                 </div>
@@ -353,7 +352,7 @@ export default function AdminStaffPage() {
                                   {app.reviewedBy && (
                                     <p className="text-xs text-green-500 mt-0.5">
                                       Disetujui oleh: {app.reviewedBy} ·{" "}
-                                      {app.reviewedAt && format(new Date(app.reviewedAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                                      {app.reviewedAt && safeFormat(app.reviewedAt, "dd MMM yyyy · HH:mm")}
                                     </p>
                                   )}
                                 </div>

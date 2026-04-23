@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
  * and records a new blockchain transaction for the update.
  */
 
+import { safeFormat } from "@/lib/dateUtils";
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -23,8 +24,6 @@ import { createNotification } from "@/lib/notifications";
 import { sha256 } from "@/lib/hash";
 import { useAuth } from "@/hooks/useAuth";
 import type { Patient, SOAPNote, VitalSigns } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 
 export default function EditSOAPPage() {
   const { patientId, noteId } = useParams<{ patientId: string; noteId: string }>();
@@ -180,7 +179,7 @@ export default function EditSOAPPage() {
             <Pencil className="w-4 h-4 flex-shrink-0" />
             <span>
               <b>Mengedit SOAP</b> yang diinput pada{" "}
-              <b>{format(new Date(original.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}</b>
+              <b>{safeFormat(original.createdAt, "dd MMM yyyy · HH:mm")}</b>
               {" "}oleh <b>{original.nurseName}</b>
             </span>
           </div>

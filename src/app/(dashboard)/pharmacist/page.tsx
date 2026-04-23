@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
  * Pharmacist Dashboard — Stats overview + prescription queue.
  */
 
+import { safeFormat } from "@/lib/dateUtils";
 import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -27,8 +28,6 @@ import { blockchainFulfillPrescriptionFull, extractErrorMessage } from "@/lib/bl
 import { createNotification } from "@/lib/notifications";
 import { sha256 } from "@/lib/hash";
 import type { Prescription, Patient } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 
 export default function PharmacistDashboard() {
   const { profile } = useAuth();
@@ -181,7 +180,7 @@ export default function PharmacistDashboard() {
                       </td>
                       <td className="py-3 px-4"><StatusBadge status={rx.status} /></td>
                       <td className="py-3 px-4 text-slate-400 text-xs">
-                        {format(new Date(rx.createdAt), "dd MMM HH:mm", { locale: localeId })}
+                        {safeFormat(rx.createdAt, "dd MMM HH:mm")}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
@@ -255,7 +254,7 @@ export default function PharmacistDashboard() {
             <div className="bg-slate-50 rounded-xl p-4 text-sm space-y-1">
               <p><b className="text-slate-600">Dokter:</b> {viewing.doctorName}</p>
               <p><b className="text-slate-600">Dibuat:</b>{" "}
-                {format(new Date(viewing.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                {safeFormat(viewing.createdAt, "dd MMM yyyy · HH:mm")}
               </p>
             </div>
             <div>
@@ -359,7 +358,7 @@ export default function PharmacistDashboard() {
             <div className="bg-slate-50 rounded-xl p-4 text-sm space-y-1">
               <p><b className="text-slate-600">Dokter:</b> {selected.doctorName}</p>
               <p><b className="text-slate-600">Dibuat:</b>{" "}
-                {format(new Date(selected.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                {safeFormat(selected.createdAt, "dd MMM yyyy · HH:mm")}
               </p>
             </div>
 

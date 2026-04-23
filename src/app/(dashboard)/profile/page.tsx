@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
  * Accepts ?tab=profile | settings | security
  */
 
+import { safeFormat } from "@/lib/dateUtils";
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
@@ -22,8 +23,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { updateUserRole } from "@/lib/emr";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 
 // ── Tab definitions ───────────────────────────────────────────────────────────
 type Tab = "profile" | "settings" | "security";
@@ -130,7 +129,7 @@ function ProfileTab({ profile }: { profile: any }) {
           <InfoRow
             icon={<Calendar className="w-4 h-4 text-slate-400" />}
             label="Bergabung"
-            value={profile.createdAt ? format(new Date(profile.createdAt), "dd MMMM yyyy", { locale: localeId }) : "—"}
+            value={profile.createdAt ? safeFormat(profile.createdAt, "dd MMMM yyyy") : "—"}
           />
           <InfoRow icon={<ShieldCheck className="w-4 h-4 text-slate-400" />} label="User ID" value={profile.uid} mono />
         </div>

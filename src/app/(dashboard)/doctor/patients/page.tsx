@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
  * Doctor — Full Patient List (all statuses, search + filter)
  */
 
+import { safeFormat } from "@/lib/dateUtils";
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { Users, Search, Stethoscope, Filter, FileText } from "lucide-react";
@@ -16,8 +17,6 @@ import { StatusBadge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { getAllPatients } from "@/lib/emr";
 import type { Patient, PatientStatus } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 
 const STATUS_FILTERS: { label: string; value: PatientStatus | "all" }[] = [
   { label: "Semua",         value: "all"          },
@@ -114,7 +113,7 @@ export default function DoctorPatientsPage() {
                       <td className="py-3 px-4 text-slate-500 text-xs">{p.department ?? "—"}</td>
                       <td className="py-3 px-4"><StatusBadge status={p.status} /></td>
                       <td className="py-3 px-4 text-slate-400 text-xs">
-                        {format(new Date(p.createdAt), "dd MMM yyyy", { locale: localeId })}
+                        {safeFormat(p.createdAt, "dd MMM yyyy")}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2 flex-wrap">

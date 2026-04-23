@@ -2,6 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
+import { safeFormat } from "@/lib/dateUtils";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -15,8 +16,6 @@ import { Spinner } from "@/components/ui/Spinner";
 import { useAuth } from "@/hooks/useAuth";
 import { getPatientByUid, getAllSOAPNotes, getAllDoctorNotes } from "@/lib/emr";
 import type { Patient, SOAPNote, DoctorNote } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 
 export default function PatientDashboard() {
   const { user, profile }  = useAuth();
@@ -171,7 +170,7 @@ export default function PatientDashboard() {
                         </p>
                         <p className="text-xs text-slate-500 mt-0.5">
                           {latestNote.doctorName} ·{" "}
-                          {format(new Date(latestNote.createdAt), "dd MMM yyyy", { locale: localeId })}
+                          {safeFormat(latestNote.createdAt, "dd MMM yyyy")}
                         </p>
                       </div>
                     </div>
@@ -189,7 +188,7 @@ export default function PatientDashboard() {
                         </p>
                         <p className="text-xs text-slate-400 mt-0.5">
                           {latestSOAP.nurseName} ·{" "}
-                          {format(new Date(latestSOAP.createdAt), "dd MMM yyyy", { locale: localeId })}
+                          {safeFormat(latestSOAP.createdAt, "dd MMM yyyy")}
                         </p>
                       </div>
                     </div>

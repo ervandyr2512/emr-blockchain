@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
  * Admin — Patient List + Department Assignment
  */
 
+import { safeFormat } from "@/lib/dateUtils";
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -30,8 +31,6 @@ import { BlockchainStatusPanel } from "@/components/ui/BlockchainStatusPanel";
 import { useAuth } from "@/hooks/useAuth";
 import type { Patient, Department } from "@/types";
 import { DEPARTMENTS } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 
 export default function AdminPatientsPage() {
   const { profile }         = useAuth();
@@ -211,7 +210,7 @@ export default function AdminPatientsPage() {
                       </td>
                       <td className="py-3.5 px-4"><StatusBadge status={p.status} /></td>
                       <td className="py-3.5 px-4 text-slate-400 text-xs whitespace-nowrap">
-                        {format(new Date(p.createdAt), "dd MMM yyyy", { locale: localeId })}
+                        {safeFormat(p.createdAt, "dd MMM yyyy")}
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2">

@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
  * Nurse — Patient List (all active patients, SOAP action)
  */
 
+import { safeFormat } from "@/lib/dateUtils";
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { Activity, Search, ClipboardList, CheckCircle2, FileText } from "lucide-react";
@@ -16,8 +17,6 @@ import { StatusBadge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { getAllPatients } from "@/lib/emr";
 import type { Patient } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 
 export default function NursePatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -94,7 +93,7 @@ export default function NursePatientsPage() {
                       <td className="py-3 px-4 text-slate-500 text-xs">{p.department ?? "—"}</td>
                       <td className="py-3 px-4"><StatusBadge status={p.status} /></td>
                       <td className="py-3 px-4 text-slate-400 text-xs">
-                        {format(new Date(p.createdAt), "dd MMM yyyy", { locale: localeId })}
+                        {safeFormat(p.createdAt, "dd MMM yyyy")}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2 flex-wrap">
