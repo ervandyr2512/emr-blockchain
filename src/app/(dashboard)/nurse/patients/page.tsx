@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { Activity, Search, ClipboardList, CheckCircle2 } from "lucide-react";
+import { Activity, Search, ClipboardList, CheckCircle2, FileText } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -97,17 +97,25 @@ export default function NursePatientsPage() {
                         {format(new Date(p.createdAt), "dd MMM yyyy", { locale: localeId })}
                       </td>
                       <td className="py-3 px-4">
-                        {p.status === "completed" ? (
-                          <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Selesai
-                          </span>
-                        ) : (
-                          <Link href={`/nurse/soap/${p.emrId}`}>
-                            <Button size="sm" icon={<ClipboardList className="w-3.5 h-3.5" />}>
-                              Input SOAP
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link href={`/nurse/records/${p.emrId}`}>
+                            <Button size="sm" variant="outline" icon={<FileText className="w-3.5 h-3.5" />}>
+                              Rekam Medis
                             </Button>
                           </Link>
-                        )}
+                          {p.status !== "completed" && (
+                            <Link href={`/nurse/soap/${p.emrId}`}>
+                              <Button size="sm" icon={<ClipboardList className="w-3.5 h-3.5" />}>
+                                Input SOAP
+                              </Button>
+                            </Link>
+                          )}
+                          {p.status === "completed" && (
+                            <span className="flex items-center gap-1 text-xs text-green-600 font-semibold">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Selesai
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

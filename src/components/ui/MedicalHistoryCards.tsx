@@ -210,7 +210,7 @@ export function SOAPHistoryCard({
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 flex flex-wrap items-center gap-1.5">
-                    {format(new Date(n.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                    {format(new Date(edited && n.updatedAt ? n.updatedAt : n.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
                     {edited && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
                         ✏️ Diperbarui
@@ -219,8 +219,8 @@ export function SOAPHistoryCard({
                   </p>
                   <p className="text-xs text-slate-500 truncate mt-0.5">
                     {n.nurseName}
-                    {edited && n.updatedAt
-                      ? ` · diperbarui ${format(new Date(n.updatedAt), "dd MMM yyyy · HH:mm", { locale: localeId })}`
+                    {edited
+                      ? ` · dibuat ${format(new Date(n.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}`
                       : ""}
                     {n.subjective
                       ? ` · "${n.subjective.slice(0, 60)}${n.subjective.length > 60 ? "…" : ""}"`

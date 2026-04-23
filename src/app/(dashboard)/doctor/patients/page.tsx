@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { Users, Search, Stethoscope, Filter } from "lucide-react";
+import { Users, Search, Stethoscope, Filter, FileText } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -117,12 +117,20 @@ export default function DoctorPatientsPage() {
                         {format(new Date(p.createdAt), "dd MMM yyyy", { locale: localeId })}
                       </td>
                       <td className="py-3 px-4">
-                        <Link href={`/doctor/emr/${p.emrId}`}>
-                          <Button size="sm" variant={p.status === "assigned" || p.status === "in_examination" ? "primary" : "outline"}
-                            icon={<Stethoscope className="w-3.5 h-3.5" />}>
-                            {p.status === "completed" ? "Lihat" : "Periksa"}
-                          </Button>
-                        </Link>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link href={`/doctor/records/${p.emrId}`}>
+                            <Button size="sm" variant="outline" icon={<FileText className="w-3.5 h-3.5" />}>
+                              Rekam Medis
+                            </Button>
+                          </Link>
+                          {p.status !== "completed" && (
+                            <Link href={`/doctor/emr/${p.emrId}`}>
+                              <Button size="sm" icon={<Stethoscope className="w-3.5 h-3.5" />}>
+                                Periksa
+                              </Button>
+                            </Link>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
