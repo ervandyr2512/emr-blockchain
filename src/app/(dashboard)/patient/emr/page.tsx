@@ -18,8 +18,7 @@ import {
   getPrescriptionsByEmrId,
 } from "@/lib/emr";
 import type { Patient, SOAPNote, DoctorNote, Prescription } from "@/types";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
+import { safeFormat } from "@/lib/dateUtils";
 
 type Tab = "soap" | "doctor" | "resep" | "blockchain";
 
@@ -146,7 +145,7 @@ export default function PatientEMRPage() {
                           <span className="text-xs text-slate-400">{n.doctorName}</span>
                           <span className="text-slate-200">·</span>
                           <span className="text-xs text-slate-400">
-                            {format(new Date(n.createdAt), "dd MMMM yyyy, HH:mm", { locale: localeId })}
+                            {safeFormat(n.createdAt, "dd MMMM yyyy, HH:mm")}
                           </span>
                         </div>
                       </div>
@@ -159,15 +158,16 @@ export default function PatientEMRPage() {
                       <div className="border-t border-slate-100 px-5 py-5 space-y-5">
 
                         {/* Vital signs */}
+                        {n.vitalSigns && (
                         <div>
                           <SectionTitle icon={<Thermometer className="w-4 h-4" />} title="Tanda Vital" />
                           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
                             {[
-                              { label: "Tekanan Darah", value: n.vitalSigns.bloodPressure + " mmHg", icon: <Droplets className="w-3.5 h-3.5" /> },
-                              { label: "Nadi",          value: n.vitalSigns.heartRate + " bpm",       icon: <HeartPulse className="w-3.5 h-3.5" /> },
-                              { label: "Suhu",          value: n.vitalSigns.temperature + " °C",      icon: <Thermometer className="w-3.5 h-3.5" /> },
-                              { label: "RR",            value: n.vitalSigns.respiratoryRate + "x/mnt", icon: <Wind className="w-3.5 h-3.5" /> },
-                              { label: "SpO₂",          value: n.vitalSigns.oxygenSaturation + "%",   icon: <Activity className="w-3.5 h-3.5" /> },
+                              { label: "Tekanan Darah", value: n.vitalSigns.bloodPressure ? n.vitalSigns.bloodPressure + " mmHg" : "—", icon: <Droplets className="w-3.5 h-3.5" /> },
+                              { label: "Nadi",          value: n.vitalSigns.heartRate ? n.vitalSigns.heartRate + " bpm" : "—",             icon: <HeartPulse className="w-3.5 h-3.5" /> },
+                              { label: "Suhu",          value: n.vitalSigns.temperature ? n.vitalSigns.temperature + " °C" : "—",           icon: <Thermometer className="w-3.5 h-3.5" /> },
+                              { label: "RR",            value: n.vitalSigns.respiratoryRate ? n.vitalSigns.respiratoryRate + "x/mnt" : "—", icon: <Wind className="w-3.5 h-3.5" /> },
+                              { label: "SpO₂",          value: n.vitalSigns.oxygenSaturation ? n.vitalSigns.oxygenSaturation + "%" : "—",   icon: <Activity className="w-3.5 h-3.5" /> },
                             ].map((v) => (
                               <div key={v.label} className="bg-slate-50 rounded-xl p-2.5 text-center">
                                 <div className="flex justify-center text-primary-400 mb-1">{v.icon}</div>
@@ -177,6 +177,7 @@ export default function PatientEMRPage() {
                             ))}
                           </div>
                         </div>
+                        )}
 
                         {/* Chief complaint & history */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -246,7 +247,7 @@ export default function PatientEMRPage() {
                       <div>
                         <p className="font-bold text-slate-800">{s.nurseName}</p>
                         <p className="text-xs text-slate-400 mt-0.5">
-                          {format(new Date(s.createdAt), "dd MMMM yyyy, HH:mm", { locale: localeId })}
+                          {safeFormat(s.createdAt, "dd MMMM yyyy, HH:mm")}
                         </p>
                       </div>
                       {expanded === `soap-${i}`
@@ -257,15 +258,16 @@ export default function PatientEMRPage() {
                     {expanded === `soap-${i}` && (
                       <div className="border-t border-slate-100 px-5 py-5 space-y-4">
                         {/* Vitals */}
+                        {s.objective && (
                         <div>
                           <SectionTitle icon={<Thermometer className="w-4 h-4" />} title="Tanda Vital" />
                           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
                             {[
-                              { label: "TD",    value: s.objective.bloodPressure + " mmHg" },
-                              { label: "Nadi",  value: s.objective.heartRate + " bpm" },
-                              { label: "Suhu",  value: s.objective.temperature + " °C" },
-                              { label: "BB",    value: s.objective.weight + " kg" },
-                              { label: "SpO₂",  value: s.objective.oxygenSaturation + "%" },
+                              { label: "TD",    value: s.objective.bloodPressure ? s.objective.bloodPressure + " mmHg" : "—" },
+                              { label: "Nadi",  value: s.objective.heartRate ? s.objective.heartRate + " bpm" : "—" },
+                              { label: "Suhu",  value: s.objective.temperature ? s.objective.temperature + " °C" : "—" },
+                              { label: "BB",    value: s.objective.weight ? s.objective.weight + " kg" : "—" },
+                              { label: "SpO₂",  value: s.objective.oxygenSaturation ? s.objective.oxygenSaturation + "%" : "—" },
                             ].map((v) => (
                               <div key={v.label} className="bg-teal-50 rounded-xl p-2.5 text-center">
                                 <p className="text-xs font-bold text-slate-800">{v.value}</p>
@@ -274,6 +276,7 @@ export default function PatientEMRPage() {
                             ))}
                           </div>
                         </div>
+                        )}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <InfoBlock label="S — Subjektif" value={s.subjective} />
@@ -307,7 +310,7 @@ export default function PatientEMRPage() {
                       <div>
                         <p className="font-bold text-slate-800">{rx.doctorName}</p>
                         <p className="text-xs text-slate-400 mt-0.5">
-                          {format(new Date(rx.createdAt), "dd MMMM yyyy", { locale: localeId })}
+                          {safeFormat(rx.createdAt, "dd MMMM yyyy")}
                         </p>
                       </div>
                       <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
@@ -321,7 +324,7 @@ export default function PatientEMRPage() {
                     </div>
 
                     <div className="space-y-2">
-                      {rx.medications.map((med: any, j: number) => (
+                      {(rx.medications ?? []).map((med: any, j: number) => (
                         <div key={j} className="flex items-start gap-3 bg-slate-50 rounded-xl p-3">
                           <div className="w-7 h-7 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
                             <Pill className="w-3.5 h-3.5 text-primary-600" />
