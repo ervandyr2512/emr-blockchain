@@ -11,7 +11,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import {
   Pill, CheckCircle2, Clock, Link as LinkIcon,
-  ShieldCheck, AlertCircle, ArrowRight,
+  ShieldCheck, AlertCircle, ArrowRight, Eye,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { StatCard, Card } from "@/components/ui/Card";
@@ -35,11 +35,16 @@ export default function PharmacistDashboard() {
 
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading,       setLoading]       = useState(true);
+  // dispense modal
   const [selected,      setSelected]      = useState<Prescription | null>(null);
   const [selPatient,    setSelPatient]    = useState<Patient | null>(null);
   const [loadingPt,     setLoadingPt]     = useState(false);
   const [dispensing,    setDispensing]    = useState(false);
   const [txHash,        setTxHash]        = useState("");
+  // view-only modal
+  const [viewing,       setViewing]       = useState<Prescription | null>(null);
+  const [viewPatient,   setViewPatient]   = useState<Patient | null>(null);
+  const [loadingViewPt, setLoadingViewPt] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -51,20 +56,20 @@ export default function PharmacistDashboard() {
 
   useEffect(load, [load]);
 
-  /** Open modal — also fetch patient identity for safety verification */
+  /** Open dispense modal — also fetch patient identity for safety verification */
   const handleSelect = async (rx: Prescription) => {
-    setSelected(rx);
-    setSelPatient(null);
-    setTxHash("");
+    setSelected(rx); setSelPatient(null); setTxHash("");
     setLoadingPt(true);
-    try {
-      const pt = await getPatient(rx.emrId);
-      setSelPatient(pt);
-    } catch {
-      // non-fatal
-    } finally {
-      setLoadingPt(false);
-    }
+    try { setSelPatient(await getPatient(rx.emrId)); } catch { /* non-fatal */ }
+    finally { setLoadingPt(false); }
+  };
+
+  /** Open view-only modal */
+  const handleView = async (rx: Prescription) => {
+    setViewing(rx); setViewPatient(null);
+    setLoadingViewPt(true);
+    try { setViewPatient(await getPatient(rx.emrId)); } catch { /* non-fatal */ }
+    finally { setLoadingViewPt(false); }
   };
 
   const dispense = async () => {
@@ -179,10 +184,17 @@ export default function PharmacistDashboard() {
                         {format(new Date(rx.createdAt), "dd MMM HH:mm", { locale: localeId })}
                       </td>
                       <td className="py-3 px-4">
-                        <Button size="sm" icon={<CheckCircle2 className="w-4 h-4" />}
-                          onClick={() => handleSelect(rx)}>
-                          Proses
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline"
+                            icon={<Eye className="w-3.5 h-3.5" />}
+                            onClick={() => handleView(rx)}>
+                            Lihat
+                          </Button>
+                          <Button size="sm" icon={<CheckCircle2 className="w-4 h-4" />}
+                            onClick={() => handleSelect(rx)}>
+                            Proses
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -197,6 +209,83 @@ export default function PharmacistDashboard() {
           )}
         </Card>
       </div>
+
+      {/* ── View-only Modal ─────────────────────────────────────────────────── */}
+      <Modal
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        title="Detail Resep"
+        size="lg"
+        footer={<Button variant="outline" onClick={() => setViewing(null)}>Tutup</Button>}
+      >
+        {viewing && (
+          <div className="space-y-4">
+            <div className="rounded-xl border-2 border-amber-300 bg-amber-50 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-100 border-b border-amber-200">
+                <ShieldCheck className="w-4 h-4 text-amber-600" />
+                <span className="text-xs font-bold text-amber-800 uppercase tracking-wide">Identitas Pasien</span>
+              </div>
+              {loadingViewPt ? (
+                <div className="px-4 py-4 flex items-center gap-2 text-sm text-slate-500"><Spinner /> Memuat…</div>
+              ) : viewPatient ? (
+                <div className="px-4 py-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                  <div>
+                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Nama Pasien</p>
+                    <p className="font-bold text-slate-800 text-base">{viewPatient.firstName} {viewPatient.lastName}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">EMR ID</p>
+                    <p className="font-mono font-semibold text-primary-700">{viewPatient.emrId}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">No. KTP</p>
+                    <p className="font-mono text-slate-700">{viewPatient.ktpNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Jenis Kelamin</p>
+                    <p className="text-slate-700">{viewPatient.gender}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="px-4 py-3 flex items-center gap-2 text-sm text-slate-500">
+                  <AlertCircle className="w-4 h-4 text-amber-400" /> Data pasien tidak ditemukan.
+                </div>
+              )}
+            </div>
+            <div className="bg-slate-50 rounded-xl p-4 text-sm space-y-1">
+              <p><b className="text-slate-600">Dokter:</b> {viewing.doctorName}</p>
+              <p><b className="text-slate-600">Dibuat:</b>{" "}
+                {format(new Date(viewing.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-700 mb-2">Daftar Obat:</p>
+              <div className="overflow-x-auto rounded-xl border border-slate-100">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      {["Nama Obat", "Dosis", "Frekuensi", "Durasi", "Catatan"].map(h => (
+                        <th key={h} className="text-left py-2 px-3 text-xs font-semibold text-slate-500">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {viewing.medications.map((m, i) => (
+                      <tr key={i} className="border-t border-slate-100">
+                        <td className="py-2 px-3 font-medium text-slate-800">{m.name}</td>
+                        <td className="py-2 px-3 text-slate-600">{m.dose}</td>
+                        <td className="py-2 px-3 text-slate-600">{m.frequency}</td>
+                        <td className="py-2 px-3 text-slate-600">{m.duration}</td>
+                        <td className="py-2 px-3 text-slate-400">{m.notes ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* ── Dispense Modal ───────────────────────────────────────────────────── */}
       <Modal

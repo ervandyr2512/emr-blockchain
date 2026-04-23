@@ -4,15 +4,16 @@ export const dynamic = "force-dynamic";
 
 /**
  * Pharmacist — Prescription Queue
- * Dedicated page for viewing and dispensing incoming prescriptions.
- * Fetches patient identity for safety verification before dispensing.
+ * Full prescription queue with:
+ *  - "Lihat Resep" → read-only detail modal
+ *  - "Proses" → verify patient identity + dispense + blockchain
  */
 
 import React, { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import {
   Pill, CheckCircle2, Clock, Link as LinkIcon,
-  RefreshCw, User, ShieldCheck, AlertCircle,
+  RefreshCw, ShieldCheck, AlertCircle, Eye,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Card } from "@/components/ui/Card";
@@ -31,16 +32,113 @@ import type { Prescription, Patient } from "@/types";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
+// ── Shared patient identity panel ─────────────────────────────────────────────
+
+function PatientIdentityPanel({ patient, loading, emrId }: {
+  patient: Patient | null;
+  loading: boolean;
+  emrId: string;
+}) {
+  return (
+    <div className="rounded-xl border-2 border-amber-300 bg-amber-50 overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-100 border-b border-amber-200">
+        <ShieldCheck className="w-4 h-4 text-amber-600" />
+        <span className="text-xs font-bold text-amber-800 uppercase tracking-wide">
+          Identitas Pasien
+        </span>
+      </div>
+      {loading ? (
+        <div className="px-4 py-4 flex items-center gap-2 text-sm text-slate-500">
+          <Spinner /> Memuat data pasien…
+        </div>
+      ) : patient ? (
+        <div className="px-4 py-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <div>
+            <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Nama Pasien</p>
+            <p className="font-bold text-slate-800 text-base">{patient.firstName} {patient.lastName}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">EMR ID</p>
+            <p className="font-mono font-semibold text-primary-700">{patient.emrId}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">No. KTP</p>
+            <p className="font-mono text-slate-700">{patient.ktpNumber}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Jenis Kelamin</p>
+            <p className="text-slate-700">{patient.gender}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">No. Telepon</p>
+            <p className="text-slate-700">{patient.phone}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Poli</p>
+            <p className="text-slate-700">{patient.department ?? "—"}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="px-4 py-3 flex items-center gap-2 text-sm text-slate-500">
+          <AlertCircle className="w-4 h-4 text-amber-400" />
+          Data pasien tidak ditemukan untuk EMR {emrId}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Medications table ─────────────────────────────────────────────────────────
+
+function MedicationsTable({ rx }: { rx: Prescription }) {
+  return (
+    <div>
+      <p className="text-sm font-bold text-slate-700 mb-2">Daftar Obat:</p>
+      <div className="overflow-x-auto rounded-xl border border-slate-100">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50">
+            <tr>
+              {["Nama Obat", "Dosis", "Frekuensi", "Durasi", "Catatan"].map(h => (
+                <th key={h} className="text-left py-2 px-3 text-xs font-semibold text-slate-500">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rx.medications.map((m, i) => (
+              <tr key={i} className="border-t border-slate-100">
+                <td className="py-2 px-3 font-medium text-slate-800">{m.name}</td>
+                <td className="py-2 px-3 text-slate-600">{m.dose}</td>
+                <td className="py-2 px-3 text-slate-600">{m.frequency}</td>
+                <td className="py-2 px-3 text-slate-600">{m.duration}</td>
+                <td className="py-2 px-3 text-slate-400">{m.notes ?? "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function PharmacistPrescriptionsPage() {
   const { profile } = useAuth();
 
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading,       setLoading]       = useState(true);
-  const [selected,      setSelected]      = useState<Prescription | null>(null);
-  const [selPatient,    setSelPatient]    = useState<Patient | null>(null);
-  const [loadingPt,     setLoadingPt]     = useState(false);
-  const [dispensing,    setDispensing]    = useState(false);
-  const [txHash,        setTxHash]        = useState("");
+
+  // dispense modal
+  const [dispRx,     setDispRx]     = useState<Prescription | null>(null);
+  const [dispPt,     setDispPt]     = useState<Patient | null>(null);
+  const [dispPtLoad, setDispPtLoad] = useState(false);
+  const [dispensing, setDispensing] = useState(false);
+  const [txHash,     setTxHash]     = useState("");
+
+  // view-only modal
+  const [viewRx,     setViewRx]     = useState<Prescription | null>(null);
+  const [viewPt,     setViewPt]     = useState<Patient | null>(null);
+  const [viewPtLoad, setViewPtLoad] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -52,70 +150,49 @@ export default function PharmacistPrescriptionsPage() {
 
   useEffect(load, [load]);
 
-  /** Open modal — also fetch patient identity for safety verification */
-  const handleSelect = async (rx: Prescription) => {
-    setSelected(rx);
-    setSelPatient(null);
-    setTxHash("");
-    setLoadingPt(true);
-    try {
-      const pt = await getPatient(rx.emrId);
-      setSelPatient(pt);
-    } catch {
-      // non-fatal
-    } finally {
-      setLoadingPt(false);
-    }
+  const openDispense = async (rx: Prescription) => {
+    setDispRx(rx); setDispPt(null); setTxHash("");
+    setDispPtLoad(true);
+    try { setDispPt(await getPatient(rx.emrId)); } catch { /* non-fatal */ }
+    finally { setDispPtLoad(false); }
+  };
+
+  const openView = async (rx: Prescription) => {
+    setViewRx(rx); setViewPt(null);
+    setViewPtLoad(true);
+    try { setViewPt(await getPatient(rx.emrId)); } catch { /* non-fatal */ }
+    finally { setViewPtLoad(false); }
   };
 
   const dispense = async () => {
-    if (!selected || !profile) return;
+    if (!dispRx || !profile) return;
     setDispensing(true);
     try {
-      const dataHash = await sha256({
-        ...selected,
-        dispensedBy: profile.uid,
-        timestamp:   new Date().toISOString(),
-      });
+      const dataHash = await sha256({ ...dispRx, dispensedBy: profile.uid, timestamp: new Date().toISOString() });
 
       let hash = "";
       const bcToastId = toast.loading("Memulai transaksi blockchain…");
       try {
-        hash = await blockchainFulfillPrescriptionFull(
-          selected.emrId,
-          dataHash,
-          (msg) => toast.loading(msg, { id: bcToastId })
-        );
+        hash = await blockchainFulfillPrescriptionFull(dispRx.emrId, dataHash,
+          (msg) => toast.loading(msg, { id: bcToastId }));
         setTxHash(hash);
         toast.success("Resep berhasil direkam di blockchain! ✅", { id: bcToastId });
       } catch (bcErr: unknown) {
         console.error("[Blockchain Rx]", bcErr);
-        toast.error(`⚠️ Blockchain gagal: ${extractErrorMessage(bcErr)}`, {
-          id: bcToastId, duration: 12000,
-        });
+        toast.error(`⚠️ Blockchain gagal: ${extractErrorMessage(bcErr)}`, { id: bcToastId, duration: 12000 });
       }
 
-      await updatePrescriptionStatus(
-        selected.emrId, selected.id, "dispensed",
-        profile.uid, profile.name, hash || undefined
-      );
+      await updatePrescriptionStatus(dispRx.emrId, dispRx.id, "dispensed", profile.uid, profile.name, hash || undefined);
 
       await createNotification({
-        icon:        "💊",
-        title:       "Resep Diserahkan",
-        body:        `Apoteker ${profile.name} menyerahkan resep ${selected.emrId}${hash ? " · Direkam di blockchain ✅" : ""}`,
-        createdAt:   new Date().toISOString(),
-        unread:      true,
-        targetRoles: ["doctor", "admin"],
-        emrId:       selected.emrId,
-        txHash:      hash || undefined,
+        icon: "💊", title: "Resep Diserahkan",
+        body: `Apoteker ${profile.name} menyerahkan resep ${dispRx.emrId}${hash ? " · Direkam di blockchain ✅" : ""}`,
+        createdAt: new Date().toISOString(), unread: true,
+        targetRoles: ["doctor", "admin"], emrId: dispRx.emrId, txHash: hash || undefined,
       }).catch(() => {});
 
-      const patientName = selPatient
-        ? `${selPatient.firstName} ${selPatient.lastName}`
-        : selected.emrId;
-      toast.success(`Resep untuk ${patientName} berhasil diserahkan!`);
-      setSelected(null);
+      toast.success(`Resep untuk ${dispPt ? `${dispPt.firstName} ${dispPt.lastName}` : dispRx.emrId} berhasil diserahkan!`);
+      setDispRx(null);
       load();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Gagal memproses resep");
@@ -132,7 +209,7 @@ export default function PharmacistPrescriptionsPage() {
       <Header title="Resep Masuk" subtitle="Antrian resep yang perlu diproses" />
       <div className="p-6 space-y-4">
 
-        {/* Summary chips */}
+        {/* Summary */}
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2">
             <Clock className="w-4 h-4 text-amber-500" />
@@ -142,13 +219,8 @@ export default function PharmacistPrescriptionsPage() {
             <Pill className="w-4 h-4 text-blue-500" />
             <span className="text-sm font-semibold text-blue-700">{processing} sedang diproses</span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            icon={<RefreshCw className="w-3.5 h-3.5" />}
-            onClick={load}
-            className="ml-auto"
-          >
+          <Button variant="outline" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />}
+            onClick={load} className="ml-auto">
             Refresh
           </Button>
         </div>
@@ -160,9 +232,7 @@ export default function PharmacistPrescriptionsPage() {
                 <thead className="bg-slate-50 border-b border-slate-100">
                   <tr>
                     {["EMR ID", "Dokter", "Obat", "Status", "Waktu Masuk", "Aksi"].map(h => (
-                      <th key={h} className="text-left py-3 px-4 text-slate-500 font-semibold text-xs uppercase tracking-wide">
-                        {h}
-                      </th>
+                      <th key={h} className="text-left py-3 px-4 text-slate-500 font-semibold text-xs uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -170,22 +240,16 @@ export default function PharmacistPrescriptionsPage() {
                   {prescriptions.map((rx) => (
                     <tr key={rx.id} className="hover:bg-slate-50 transition-colors">
                       <td className="py-3 px-4">
-                        <span className="font-mono text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-lg">
-                          {rx.emrId}
-                        </span>
+                        <span className="font-mono text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-lg">{rx.emrId}</span>
                       </td>
                       <td className="py-3 px-4 text-slate-600">{rx.doctorName}</td>
                       <td className="py-3 px-4">
                         <div className="flex flex-wrap gap-1">
                           {rx.medications.slice(0, 3).map((m, j) => (
-                            <span key={j} className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-lg">
-                              {m.name}
-                            </span>
+                            <span key={j} className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded-lg">{m.name}</span>
                           ))}
                           {rx.medications.length > 3 && (
-                            <span className="text-xs text-slate-400">
-                              +{rx.medications.length - 3} lainnya
-                            </span>
+                            <span className="text-xs text-slate-400">+{rx.medications.length - 3} lainnya</span>
                           )}
                         </div>
                       </td>
@@ -194,13 +258,18 @@ export default function PharmacistPrescriptionsPage() {
                         {format(new Date(rx.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
                       </td>
                       <td className="py-3 px-4">
-                        <Button
-                          size="sm"
-                          icon={<CheckCircle2 className="w-4 h-4" />}
-                          onClick={() => handleSelect(rx)}
-                        >
-                          Proses
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline"
+                            icon={<Eye className="w-3.5 h-3.5" />}
+                            onClick={() => openView(rx)}>
+                            Lihat
+                          </Button>
+                          <Button size="sm"
+                            icon={<CheckCircle2 className="w-4 h-4" />}
+                            onClick={() => openDispense(rx)}>
+                            Proses
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -219,17 +288,40 @@ export default function PharmacistPrescriptionsPage() {
         </Card>
       </div>
 
+      {/* ── View-only Modal ──────────────────────────────────────────────────── */}
+      <Modal
+        open={!!viewRx}
+        onClose={() => setViewRx(null)}
+        title="Detail Resep"
+        size="lg"
+        footer={<Button variant="outline" onClick={() => setViewRx(null)}>Tutup</Button>}
+      >
+        {viewRx && (
+          <div className="space-y-4">
+            <PatientIdentityPanel patient={viewPt} loading={viewPtLoad} emrId={viewRx.emrId} />
+            <div className="bg-slate-50 rounded-xl p-4 text-sm space-y-1">
+              <p><b className="text-slate-600">Dokter:</b> {viewRx.doctorName}</p>
+              <p><b className="text-slate-600">Dibuat:</b>{" "}
+                {format(new Date(viewRx.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+              </p>
+              <p><b className="text-slate-600">Status:</b>{" "}
+                <StatusBadge status={viewRx.status} />
+              </p>
+            </div>
+            <MedicationsTable rx={viewRx} />
+          </div>
+        )}
+      </Modal>
+
       {/* ── Dispense Modal ───────────────────────────────────────────────────── */}
       <Modal
-        open={!!selected}
-        onClose={() => { setSelected(null); setTxHash(""); }}
-        title="Verifikasi & Serahkan Resep"
+        open={!!dispRx}
+        onClose={() => { setDispRx(null); setTxHash(""); }}
+        title="Verifikasi &amp; Serahkan Resep"
         size="lg"
         footer={
           <>
-            <Button variant="outline" onClick={() => { setSelected(null); setTxHash(""); }}>
-              Batal
-            </Button>
+            <Button variant="outline" onClick={() => { setDispRx(null); setTxHash(""); }}>Batal</Button>
             <Button onClick={dispense} loading={dispensing} variant="secondary"
               icon={<CheckCircle2 className="w-4 h-4" />}>
               Obat Telah Diserahkan &amp; Rekam Blockchain
@@ -237,94 +329,16 @@ export default function PharmacistPrescriptionsPage() {
           </>
         }
       >
-        {selected && (
+        {dispRx && (
           <div className="space-y-4">
-
-            {/* ── Patient identity — safety check ────────────────────────── */}
-            <div className="rounded-xl border-2 border-amber-300 bg-amber-50 overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-100 border-b border-amber-200">
-                <ShieldCheck className="w-4 h-4 text-amber-600" />
-                <span className="text-xs font-bold text-amber-800 uppercase tracking-wide">
-                  Verifikasi Identitas Pasien
-                </span>
-              </div>
-              {loadingPt ? (
-                <div className="px-4 py-4 flex items-center gap-2 text-sm text-slate-500">
-                  <Spinner /> Memuat data pasien…
-                </div>
-              ) : selPatient ? (
-                <div className="px-4 py-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                  <div>
-                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Nama Pasien</p>
-                    <p className="font-bold text-slate-800 text-base">
-                      {selPatient.firstName} {selPatient.lastName}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">EMR ID</p>
-                    <p className="font-mono font-semibold text-primary-700">{selPatient.emrId}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">No. KTP</p>
-                    <p className="font-mono text-slate-700">{selPatient.ktpNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Jenis Kelamin</p>
-                    <p className="text-slate-700">{selPatient.gender}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">No. Telepon</p>
-                    <p className="text-slate-700">{selPatient.phone}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Poli</p>
-                    <p className="text-slate-700">{selPatient.department ?? "—"}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="px-4 py-3 flex items-center gap-2 text-sm text-slate-500">
-                  <AlertCircle className="w-4 h-4 text-amber-400" />
-                  Data pasien tidak ditemukan untuk EMR {selected.emrId}
-                </div>
-              )}
-            </div>
-
-            {/* ── Prescription meta ──────────────────────────────────────── */}
+            <PatientIdentityPanel patient={dispPt} loading={dispPtLoad} emrId={dispRx.emrId} />
             <div className="bg-slate-50 rounded-xl p-4 text-sm space-y-1">
-              <p><b className="text-slate-600">Dokter:</b> {selected.doctorName}</p>
+              <p><b className="text-slate-600">Dokter:</b> {dispRx.doctorName}</p>
               <p><b className="text-slate-600">Dibuat:</b>{" "}
-                {format(new Date(selected.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+                {format(new Date(dispRx.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
               </p>
             </div>
-
-            {/* ── Medications table ──────────────────────────────────────── */}
-            <div>
-              <p className="text-sm font-bold text-slate-700 mb-2">Daftar Obat:</p>
-              <div className="overflow-x-auto rounded-xl border border-slate-100">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      {["Nama Obat", "Dosis", "Frekuensi", "Durasi", "Catatan"].map(h => (
-                        <th key={h} className="text-left py-2 px-3 text-xs font-semibold text-slate-500">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selected.medications.map((m, i) => (
-                      <tr key={i} className="border-t border-slate-100">
-                        <td className="py-2 px-3 font-medium text-slate-800">{m.name}</td>
-                        <td className="py-2 px-3 text-slate-600">{m.dose}</td>
-                        <td className="py-2 px-3 text-slate-600">{m.frequency}</td>
-                        <td className="py-2 px-3 text-slate-600">{m.duration}</td>
-                        <td className="py-2 px-3 text-slate-400">{m.notes ?? "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* ── Blockchain TX hash ─────────────────────────────────────── */}
+            <MedicationsTable rx={dispRx} />
             {txHash && (
               <div className="bg-green-50 rounded-xl p-3 border border-green-200">
                 <p className="text-xs font-semibold text-green-700 flex items-center gap-1.5 mb-1">

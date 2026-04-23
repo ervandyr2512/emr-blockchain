@@ -14,7 +14,7 @@ import { clsx } from "clsx";
 import {
   LayoutDashboard, Users, FileText, Activity, FlaskConical,
   Pill, ClipboardList, ChevronLeft, ChevronRight,
-  ShieldCheck, Building2, LogOut,
+  ShieldCheck, Building2, LogOut, PackageCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { signOut } from "@/lib/auth";
@@ -94,6 +94,12 @@ const NAV_ITEMS: NavItem[] = [
     href:  "/pharmacist/prescriptions",
     label: "Resep Masuk",
     icon:  <Pill className="w-5 h-5" />,
+    roles: ["pharmacist"],
+  },
+  {
+    href:  "/pharmacist/dispensed",
+    label: "Obat Diserahkan",
+    icon:  <PackageCheck className="w-5 h-5" />,
     roles: ["pharmacist"],
   },
 ];

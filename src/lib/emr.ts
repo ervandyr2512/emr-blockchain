@@ -334,6 +334,25 @@ export async function getPendingPrescriptions(): Promise<Prescription[]> {
   return all.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 }
 
+export async function getDispensedPrescriptions(): Promise<Prescription[]> {
+  const snap = await get(ref(db, "prescriptions"));
+  if (!snap.exists()) return [];
+  const all: Prescription[] = [];
+  const data = snap.val() as Record<string, Record<string, Prescription>>;
+  Object.values(data).forEach((byPatient) => {
+    Object.entries(byPatient).forEach(([key, rx]) => {
+      if (rx.status === "dispensed") {
+        all.push({ ...rx, id: key });
+      }
+    });
+  });
+  return all.sort(
+    (a, b) =>
+      new Date(b.dispensedAt ?? b.createdAt).getTime() -
+      new Date(a.dispensedAt ?? a.createdAt).getTime()
+  );
+}
+
 export async function updatePrescriptionStatus(
   emrId: string,
   rxId: string,
