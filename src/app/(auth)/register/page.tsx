@@ -135,13 +135,13 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-900 via-navy-900 to-primary-800 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-3 backdrop-blur-sm border border-white/20">
+        {/* Logo — clickable back to landing page */}
+        <Link href="/" className="flex flex-col items-center mb-6 group">
+          <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center mb-3 backdrop-blur-sm border border-white/20 group-hover:bg-white/20 transition-colors">
             <Building2 className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-white">Pendaftaran Pasien Baru</h1>
-        </div>
+          <h1 className="text-xl font-bold text-white group-hover:text-white/90 transition-colors">Pendaftaran Pasien Baru</h1>
+        </Link>
 
         {/* Step indicator */}
         <div className="flex items-center gap-3 justify-center mb-6">

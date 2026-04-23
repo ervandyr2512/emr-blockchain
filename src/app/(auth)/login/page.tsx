@@ -96,14 +96,14 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-primary-900 via-navy-900 to-primary-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
 
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm border border-white/20">
+        {/* Logo — clickable back to landing page */}
+        <Link href="/" className="flex flex-col items-center mb-8 group">
+          <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm border border-white/20 group-hover:bg-white/20 transition-colors">
             <Building2 className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">EMR Blockchain</h1>
+          <h1 className="text-2xl font-bold text-white group-hover:text-white/90 transition-colors">EMR Blockchain</h1>
           <p className="text-white/60 text-sm mt-1">Sistem Rekam Medis Elektronik</p>
-        </div>
+        </Link>
 
         {/* ── STATE: unverified ── */}
         {pageState === "unverified" && (

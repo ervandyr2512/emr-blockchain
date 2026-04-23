@@ -162,14 +162,14 @@ export default function RegisterDokterPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
 
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-teal-600 rounded-2xl flex items-center justify-center shadow-lg mb-4">
+        {/* Logo — clickable back to landing page */}
+        <Link href="/" className="flex flex-col items-center mb-8 group">
+          <div className="w-14 h-14 bg-teal-600 rounded-2xl flex items-center justify-center shadow-lg mb-4 group-hover:bg-teal-500 transition-colors">
             <Stethoscope className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-extrabold text-white">Daftar Sebagai Dokter</h1>
+          <h1 className="text-2xl font-extrabold text-white group-hover:text-white/90 transition-colors">Daftar Sebagai Dokter</h1>
           <p className="text-white/60 text-sm mt-1">EMRChain — Sistem Rekam Medis Elektronik</p>
-        </div>
+        </Link>
 
         {/* Progress Steps */}
         <div className="flex items-center justify-center gap-0 mb-8">
