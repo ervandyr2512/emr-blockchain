@@ -11,14 +11,14 @@ export const dynamic = "force-dynamic";
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { ArrowLeft, Plus, Trash2, FlaskConical, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, FlaskConical, Link as LinkIcon, ClipboardList } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, TextArea, Select } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
-import { StatusBadge } from "@/components/ui/Badge";
-import { getPatient, getLatestSOAP, saveDoctorNote, savePrescription } from "@/lib/emr";
+import { SOAPHistoryCard, DoctorHistoryCard } from "@/components/ui/MedicalHistoryCards";
+import { getPatient, getLatestSOAP, getAllSOAPNotes, getAllDoctorNotes, saveDoctorNote, savePrescription } from "@/lib/emr";
 import { blockchainSubmitDoctorNoteFull, extractErrorMessage } from "@/lib/blockchain";
 import { createNotification } from "@/lib/notifications";
 import { sha256 } from "@/lib/hash";
@@ -33,11 +33,13 @@ export default function DoctorEMRPage() {
   const router        = useRouter();
   const { profile }   = useAuth();
 
-  const [patient, setPatient]   = useState<Patient | null>(null);
-  const [soap, setSOAP]         = useState<SOAPNote | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [saving, setSaving]     = useState(false);
-  const [txHash, setTxHash]     = useState("");
+  const [patient,     setPatient]     = useState<Patient | null>(null);
+  const [soap,        setSOAP]        = useState<SOAPNote | null>(null);
+  const [soapNotes,   setSOAPNotes]   = useState<SOAPNote[]>([]);
+  const [doctorNotes, setDoctorNotes] = useState<DoctorNote[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [saving,      setSaving]      = useState(false);
+  const [txHash,      setTxHash]      = useState("");
 
   const [form, setForm] = useState({
     chiefComplaint:        "",
@@ -61,8 +63,18 @@ export default function DoctorEMRPage() {
   });
 
   useEffect(() => {
-    Promise.all([getPatient(patientId), getLatestSOAP(patientId)])
-      .then(([p, s]) => { setPatient(p); if (s) { setSOAP(s); setVitals(s.objective); } })
+    Promise.all([
+      getPatient(patientId),
+      getLatestSOAP(patientId),
+      getAllSOAPNotes(patientId),
+      getAllDoctorNotes(patientId),
+    ])
+      .then(([p, latestSoap, soaps, docs]) => {
+        setPatient(p);
+        setSOAPNotes(soaps);
+        setDoctorNotes(docs);
+        if (latestSoap) { setSOAP(latestSoap); setVitals(latestSoap.objective); }
+      })
       .catch((err) => console.error("[DoctorEMR]", err))
       .finally(() => setLoading(false));
   }, [patientId]);
@@ -196,19 +208,30 @@ export default function DoctorEMRPage() {
           </div>
         </Card>
 
-        {/* SOAP from nurse */}
-        {soap && (
-          <Card padding="sm" className="bg-teal-50 border-teal-100">
-            <p className="text-xs font-bold text-teal-700 mb-2">📋 SOAP dari Perawat — {new Date(soap.createdAt).toLocaleString("id-ID")}</p>
-            <p className="text-sm text-teal-800 mb-2"><b>Subjektif:</b> {soap.subjective}</p>
-            <div className="grid grid-cols-4 gap-2 text-xs text-teal-700">
-              <span>TD: {soap.objective.bloodPressure} mmHg</span>
-              <span>HR: {soap.objective.heartRate} bpm</span>
-              <span>Suhu: {soap.objective.temperature}°C</span>
-              <span>RR: {soap.objective.respiratoryRate} x/min</span>
-            </div>
+        {/* ── Medical history ─────────────────────────────────────────────── */}
+        {(soapNotes.length > 0 || doctorNotes.length > 0) ? (
+          <div className="space-y-3">
+            <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-slate-400" /> Riwayat Rekam Medis
+            </h2>
+            <SOAPHistoryCard  notes={soapNotes}   />
+            <DoctorHistoryCard notes={doctorNotes} />
+          </div>
+        ) : (
+          <Card padding="sm" className="border-dashed border-slate-200 bg-slate-50 text-center text-sm text-slate-400 py-5">
+            Belum ada riwayat SOAP maupun catatan dokter untuk pasien ini.
           </Card>
         )}
+
+        {/* ── Examination form ────────────────────────────────────────────── */}
+        <h2 className="text-base font-bold text-slate-700 flex items-center gap-2 pt-2">
+          ✏️ Input Pemeriksaan Baru
+          {soap && (
+            <span className="text-xs font-normal text-teal-600 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded-full">
+              Vital auto-isi dari SOAP perawat
+            </span>
+          )}
+        </h2>
 
         <form onSubmit={submit} className="space-y-4">
 
