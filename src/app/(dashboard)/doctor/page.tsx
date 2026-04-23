@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Stethoscope, ChevronRight, ClipboardList, CheckCircle2, Clock } from "lucide-react";
+import { Stethoscope, ClipboardList, CheckCircle2, Clock, FileText } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { StatCard, Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -74,9 +74,16 @@ export default function DoctorDashboard() {
                         {format(new Date(p.createdAt), "dd MMM yyyy", { locale: localeId })}
                       </td>
                       <td className="py-3 px-4">
-                        <Link href={`/doctor/emr/${p.emrId}`}>
-                          <Button size="sm" icon={<Stethoscope className="w-4 h-4" />}>Periksa</Button>
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link href={`/doctor/records/${p.emrId}`}>
+                            <Button size="sm" variant="outline" icon={<FileText className="w-4 h-4" />}>
+                              Rekam Medis
+                            </Button>
+                          </Link>
+                          <Link href={`/doctor/emr/${p.emrId}`}>
+                            <Button size="sm" icon={<Stethoscope className="w-4 h-4" />}>Periksa</Button>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}

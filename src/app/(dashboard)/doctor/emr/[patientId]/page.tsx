@@ -17,8 +17,8 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, TextArea, Select } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
-import { SOAPHistoryCard, DoctorHistoryCard } from "@/components/ui/MedicalHistoryCards";
-import { getPatient, getLatestSOAP, getAllSOAPNotes, getAllDoctorNotes, saveDoctorNote, savePrescription } from "@/lib/emr";
+import { SOAPHistoryCard, DoctorHistoryCard, PrescriptionHistoryCard } from "@/components/ui/MedicalHistoryCards";
+import { getPatient, getLatestSOAP, getAllSOAPNotes, getAllDoctorNotes, getPrescriptionsByEmrId, saveDoctorNote, savePrescription } from "@/lib/emr";
 import { blockchainSubmitDoctorNoteFull, extractErrorMessage } from "@/lib/blockchain";
 import { createNotification } from "@/lib/notifications";
 import { sha256 } from "@/lib/hash";
@@ -33,10 +33,11 @@ export default function DoctorEMRPage() {
   const router        = useRouter();
   const { profile }   = useAuth();
 
-  const [patient,     setPatient]     = useState<Patient | null>(null);
-  const [soap,        setSOAP]        = useState<SOAPNote | null>(null);
-  const [soapNotes,   setSOAPNotes]   = useState<SOAPNote[]>([]);
-  const [doctorNotes, setDoctorNotes] = useState<DoctorNote[]>([]);
+  const [patient,       setPatient]       = useState<Patient | null>(null);
+  const [soap,          setSOAP]          = useState<SOAPNote | null>(null);
+  const [soapNotes,     setSOAPNotes]     = useState<SOAPNote[]>([]);
+  const [doctorNotes,   setDoctorNotes]   = useState<DoctorNote[]>([]);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [saving,      setSaving]      = useState(false);
   const [txHash,      setTxHash]      = useState("");
@@ -68,11 +69,13 @@ export default function DoctorEMRPage() {
       getLatestSOAP(patientId),
       getAllSOAPNotes(patientId),
       getAllDoctorNotes(patientId),
+      getPrescriptionsByEmrId(patientId),
     ])
-      .then(([p, latestSoap, soaps, docs]) => {
+      .then(([p, latestSoap, soaps, docs, rxs]) => {
         setPatient(p);
         setSOAPNotes(soaps);
         setDoctorNotes(docs);
+        setPrescriptions(rxs);
         if (latestSoap) { setSOAP(latestSoap); setVitals(latestSoap.objective); }
       })
       .catch((err) => console.error("[DoctorEMR]", err))
@@ -209,13 +212,14 @@ export default function DoctorEMRPage() {
         </Card>
 
         {/* ── Medical history ─────────────────────────────────────────────── */}
-        {(soapNotes.length > 0 || doctorNotes.length > 0) ? (
+        {(soapNotes.length > 0 || doctorNotes.length > 0 || prescriptions.length > 0) ? (
           <div className="space-y-3">
             <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
               <ClipboardList className="w-4 h-4 text-slate-400" /> Riwayat Rekam Medis
             </h2>
-            <SOAPHistoryCard  notes={soapNotes}   />
-            <DoctorHistoryCard notes={doctorNotes} />
+            <SOAPHistoryCard         notes={soapNotes} />
+            <DoctorHistoryCard       notes={doctorNotes} />
+            <PrescriptionHistoryCard prescriptions={prescriptions} />
           </div>
         ) : (
           <Card padding="sm" className="border-dashed border-slate-200 bg-slate-50 text-center text-sm text-slate-400 py-5">

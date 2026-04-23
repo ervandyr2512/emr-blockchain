@@ -16,16 +16,16 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, TextArea } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
-import { SOAPHistoryCard, DoctorHistoryCard } from "@/components/ui/MedicalHistoryCards";
+import { SOAPHistoryCard, DoctorHistoryCard, PrescriptionHistoryCard } from "@/components/ui/MedicalHistoryCards";
 import {
   getPatient, saveSOAPNote,
-  getAllSOAPNotes, getAllDoctorNotes,
+  getAllSOAPNotes, getAllDoctorNotes, getPrescriptionsByEmrId,
 } from "@/lib/emr";
 import { blockchainSubmitSOAPFull, extractErrorMessage } from "@/lib/blockchain";
 import { createNotification } from "@/lib/notifications";
 import { sha256 } from "@/lib/hash";
 import { useAuth } from "@/hooks/useAuth";
-import type { Patient, SOAPNote, DoctorNote, VitalSigns } from "@/types";
+import type { Patient, SOAPNote, DoctorNote, Prescription, VitalSigns } from "@/types";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
@@ -37,8 +37,9 @@ export default function SOAPPage() {
   const { profile }   = useAuth();
 
   const [patient,     setPatient]     = useState<Patient | null>(null);
-  const [soapNotes,   setSOAPNotes]   = useState<SOAPNote[]>([]);
-  const [doctorNotes, setDoctorNotes] = useState<DoctorNote[]>([]);
+  const [soapNotes,     setSOAPNotes]     = useState<SOAPNote[]>([]);
+  const [doctorNotes,   setDoctorNotes]   = useState<DoctorNote[]>([]);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [saving,      setSaving]      = useState(false);
   const [txHash,      setTxHash]      = useState<string>("");
@@ -61,11 +62,13 @@ export default function SOAPPage() {
       getPatient(patientId),
       getAllSOAPNotes(patientId),
       getAllDoctorNotes(patientId),
+      getPrescriptionsByEmrId(patientId),
     ])
-      .then(([p, soaps, docs]) => {
+      .then(([p, soaps, docs, rxs]) => {
         setPatient(p);
         setSOAPNotes(soaps);
         setDoctorNotes(docs);
+        setPrescriptions(rxs);
       })
       .catch((err) => console.error("[NurseSOAP]", err))
       .finally(() => setLoading(false));
@@ -143,7 +146,7 @@ export default function SOAPPage() {
   if (loading) return <Spinner center label="Memuat data pasien…" />;
   if (!patient) return <div className="p-8 text-red-500">Pasien tidak ditemukan.</div>;
 
-  const hasHistory = soapNotes.length > 0 || doctorNotes.length > 0;
+  const hasHistory = soapNotes.length > 0 || doctorNotes.length > 0 || prescriptions.length > 0;
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -174,11 +177,9 @@ export default function SOAPPage() {
               <ClipboardList className="w-4 h-4 text-slate-400" /> Riwayat Rekam Medis
             </h2>
 
-            {/* SOAP history */}
-            <SOAPHistoryCard notes={soapNotes} />
-
-            {/* Doctor notes history */}
-            <DoctorHistoryCard notes={doctorNotes} />
+            <SOAPHistoryCard         notes={soapNotes} />
+            <DoctorHistoryCard       notes={doctorNotes} />
+            <PrescriptionHistoryCard prescriptions={prescriptions} />
           </div>
         )}
 

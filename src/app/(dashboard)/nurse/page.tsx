@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Activity, ChevronRight, ClipboardList } from "lucide-react";
+import { Activity, ClipboardList, FileText } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { StatCard, Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -55,7 +55,7 @@ export default function NurseDashboard() {
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 border-b border-slate-100">
                   <tr>
-                    {["EMR ID", "Nama", "Poli", "Status", "Terdaftar", "Aksi"].map(h => (
+                    {["EMR ID", "Nama", "Poli", "Status", "Terdaftar", "Aksi"].map((h) => (
                       <th key={h} className="text-left py-3 px-4 text-slate-500 font-semibold text-xs uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
@@ -73,9 +73,16 @@ export default function NurseDashboard() {
                         {format(new Date(p.createdAt), "dd MMM yyyy", { locale: localeId })}
                       </td>
                       <td className="py-3 px-4">
-                        <Link href={`/nurse/soap/${p.emrId}`}>
-                          <Button size="sm" icon={<ClipboardList className="w-4 h-4" />}>Input SOAP</Button>
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link href={`/nurse/records/${p.emrId}`}>
+                            <Button size="sm" variant="outline" icon={<FileText className="w-4 h-4" />}>
+                              Rekam Medis
+                            </Button>
+                          </Link>
+                          <Link href={`/nurse/soap/${p.emrId}`}>
+                            <Button size="sm" icon={<ClipboardList className="w-4 h-4" />}>Input SOAP</Button>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   ))}
