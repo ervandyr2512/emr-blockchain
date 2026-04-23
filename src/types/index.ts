@@ -88,6 +88,13 @@ export interface VitalSigns {
   height?:          number;  // cm
 }
 
+export interface BlockchainTrailEntry {
+  txHash:    string;
+  timestamp: string;
+  action:    "created" | "updated";
+  actorName: string;
+}
+
 export interface SOAPNote {
   id:           string;
   emrId:        string;
@@ -98,7 +105,9 @@ export interface SOAPNote {
   assessment:   string;
   plan:         string;
   blockchainTxHash?: string;
+  blockchainHistory?: Record<string, BlockchainTrailEntry>;
   createdAt:    string;
+  updatedAt?:   string;
 }
 
 // ─── Doctor Examination ─────────────────────────────────────────────────────
@@ -129,6 +138,7 @@ export interface DoctorNote {
   managementPlan:        string;
   prescription?:         Prescription;
   blockchainTxHash?:     string;
+  blockchainHistory?:    Record<string, BlockchainTrailEntry>;
   createdAt:             string;
   updatedAt:             string;
 }
