@@ -179,6 +179,20 @@ export const ACTION_TYPE_LABELS: Record<number, string> = {
   5: "Department Assigned",
 };
 
+// ─── Notifications ──────────────────────────────────────────────────────────
+
+export interface AppNotification {
+  id:           string;
+  icon:         string;
+  title:        string;
+  body:         string;
+  createdAt:    string;   // ISO string
+  unread:       boolean;
+  targetRoles?: string[]; // which roles see this; undefined = all roles
+  emrId?:       string;
+  txHash?:      string;
+}
+
 // ─── Dashboard Stats ────────────────────────────────────────────────────────
 
 export interface DashboardStats {

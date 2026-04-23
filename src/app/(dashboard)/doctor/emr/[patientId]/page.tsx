@@ -20,6 +20,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { StatusBadge } from "@/components/ui/Badge";
 import { getPatient, getLatestSOAP, saveDoctorNote, savePrescription } from "@/lib/emr";
 import { blockchainSubmitDoctorNoteFull, extractErrorMessage } from "@/lib/blockchain";
+import { createNotification } from "@/lib/notifications";
 import { sha256 } from "@/lib/hash";
 import { useAuth } from "@/hooks/useAuth";
 import type { Patient, SOAPNote, DoctorNote, SupportingExam, MedicationItem, Prescription, VitalSigns } from "@/types";
@@ -135,20 +136,34 @@ export default function DoctorEMRPage() {
       }
 
       // Blockchain (full flow: MetaMask → Sepolia → selfRegister → registerEMR → submit)
+      let bcHash = "";
       const bcToastId = toast.loading("Memulai transaksi blockchain…");
       try {
-        const hash = await blockchainSubmitDoctorNoteFull(
+        bcHash = await blockchainSubmitDoctorNoteFull(
           patientId,
           dataHash,
           (msg) => toast.loading(msg, { id: bcToastId })
         );
-        setTxHash(hash);
+        setTxHash(bcHash);
         toast.success("Catatan dokter berhasil direkam di blockchain! ✅", { id: bcToastId });
       } catch (bcErr: unknown) {
         console.error("[Blockchain DoctorNote]", bcErr);
         const errMsg = extractErrorMessage(bcErr);
         toast.error(`⚠️ Blockchain gagal: ${errMsg}`, { id: bcToastId, duration: 12000 });
       }
+
+      // ── Push live notifications ───────────────────────────────────────────
+      const hasPrescription = medications.length > 0;
+      await createNotification({
+        icon:        "👨‍⚕️",
+        title:       "Catatan Dokter Dibuat",
+        body:        `Dr. ${profile.name} selesai memeriksa ${patient?.firstName ?? patientId}${hasPrescription ? " · Resep dikirim ke apoteker 💊" : ""}${bcHash ? " · Blockchain ✅" : ""}`,
+        createdAt:   new Date().toISOString(),
+        unread:      true,
+        targetRoles: hasPrescription ? ["pharmacist", "admin"] : ["admin"],
+        emrId:       patientId,
+        txHash:      bcHash || undefined,
+      }).catch(() => {});
 
       toast.success("Pemeriksaan berhasil disimpan!");
       setTimeout(() => router.push("/doctor"), 2500);

@@ -19,6 +19,7 @@ import { Input, TextArea } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { getPatient, saveSOAPNote, getLatestSOAP } from "@/lib/emr";
 import { blockchainSubmitSOAPFull, extractErrorMessage } from "@/lib/blockchain";
+import { createNotification } from "@/lib/notifications";
 import { sha256 } from "@/lib/hash";
 import { useAuth } from "@/hooks/useAuth";
 import type { Patient, SOAPNote, VitalSigns } from "@/types";
@@ -107,6 +108,18 @@ export default function SOAPPage() {
         const errMsg = extractErrorMessage(bcErr);
         toast.error(`⚠️ Blockchain gagal: ${errMsg}`, { id: bcToastId, duration: 12000 });
       }
+
+      // ── Push live notification ────────────────────────────────────────────
+      await createNotification({
+        icon:        "🩺",
+        title:       "SOAP Baru Disubmit",
+        body:        `Perawat ${profile.name} mengisi SOAP pasien ${patient?.firstName ?? patientId}${hash ? " · Direkam di blockchain ✅" : ""}`,
+        createdAt:   new Date().toISOString(),
+        unread:      true,
+        targetRoles: ["doctor", "admin"],
+        emrId:       patientId,
+        txHash:      hash || undefined,
+      }).catch(() => {});
 
       toast.success(`SOAP untuk ${patient?.firstName} berhasil disimpan.`);
       setTimeout(() => router.push("/nurse"), 2000);

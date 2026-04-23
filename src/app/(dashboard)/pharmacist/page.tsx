@@ -18,6 +18,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useAuth } from "@/hooks/useAuth";
 import { getPendingPrescriptions, updatePrescriptionStatus } from "@/lib/emr";
 import { blockchainFulfillPrescriptionFull, extractErrorMessage } from "@/lib/blockchain";
+import { createNotification } from "@/lib/notifications";
 import { sha256 } from "@/lib/hash";
 import type { Prescription } from "@/types";
 import { format } from "date-fns";
@@ -66,6 +67,18 @@ export default function PharmacistDashboard() {
         selected.emrId, selected.id, "dispensed",
         profile.uid, profile.name, hash
       );
+
+      // ── Push live notification ────────────────────────────────────────────
+      await createNotification({
+        icon:        "💊",
+        title:       "Resep Diserahkan",
+        body:        `Apoteker ${profile.name} menyerahkan resep EMR ${selected.emrId}${hash ? " · Direkam di blockchain ✅" : ""}`,
+        createdAt:   new Date().toISOString(),
+        unread:      true,
+        targetRoles: ["doctor", "admin"],
+        emrId:       selected.emrId,
+        txHash:      hash || undefined,
+      }).catch(() => {});
 
       toast.success(`Resep untuk ${selected.emrId} berhasil diserahkan!`);
       setSelected(null);

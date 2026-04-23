@@ -18,6 +18,7 @@ import { Input, Select } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Spinner } from "@/components/ui/Spinner";
 import { getAllPatients, assignPatientDepartment } from "@/lib/emr";
+import { createNotification } from "@/lib/notifications";
 import {
   blockchainAssignDepartmentFull,
   getBlockchainStatus,
@@ -110,6 +111,19 @@ export default function AdminPatientsPage() {
     // ── Always save to Firebase ────────────────────────────────────────────
     try {
       await assignPatientDepartment(selected.emrId, department as Department, txHash);
+
+      // ── Push live notification ────────────────────────────────────────────
+      await createNotification({
+        icon:        "🏥",
+        title:       "Pasien Ditugaskan ke Poli",
+        body:        `${selected.firstName} ${selected.lastName} ditugaskan ke ${department}${txHash ? " · Direkam di blockchain ✅" : ""}`,
+        createdAt:   new Date().toISOString(),
+        unread:      true,
+        targetRoles: ["nurse", "doctor"],
+        emrId:       selected.emrId,
+        txHash:      txHash,
+      }).catch(() => {});
+
       toast.success(
         txHash
           ? `${selected.firstName} ditugaskan ke Poli ${department} & dicatat di blockchain.`

@@ -10,6 +10,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Bell, ChevronDown, LogOut, User, Settings, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotifications";
 import { signOut } from "@/lib/auth";
 
 interface HeaderProps {
@@ -25,20 +26,25 @@ const roleConfig: Record<string, { label: string; color: string }> = {
   pharmacist: { label: "Apoteker",  color: "bg-amber-100 text-amber-700" },
 };
 
-const DEMO_NOTIFICATIONS = [
-  { id: "1", icon: "🏥", title: "Pasien baru terdaftar",       body: "Budi Santoso didaftarkan ke Poli Penyakit Dalam.",      time: "5 mnt lalu",  unread: true  },
-  { id: "2", icon: "💊", title: "Resep selesai diproses",      body: "Resep untuk Budi Santoso sudah diserahkan ke pasien.",   time: "30 mnt lalu", unread: true  },
-  { id: "3", icon: "📋", title: "SOAP note telah diisi",       body: "Perawat Sari telah mengisi catatan SOAP pasien.",        time: "1 jam lalu",  unread: false },
-  { id: "4", icon: "🔗", title: "Data tersimpan di blockchain", body: "Hash rekam medis berhasil dicatat di Sepolia testnet.", time: "2 jam lalu",  unread: false },
-];
+/** Format ISO timestamp → relative time string in Indonesian */
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins  = Math.floor(diff / 60_000);
+  if (mins < 1)   return "baru saja";
+  if (mins < 60)  return `${mins} mnt lalu`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)   return `${hrs} jam lalu`;
+  const days = Math.floor(hrs / 24);
+  return `${days} hari lalu`;
+}
 
 export function Header({ title, subtitle }: HeaderProps) {
   const router      = useRouter();
   const { profile } = useAuth();
 
-  const [showNotif,    setShowNotif]    = useState(false);
-  const [showProfile,  setShowProfile]  = useState(false);
-  const [notifications, setNotifs]      = useState(DEMO_NOTIFICATIONS);
+  const [showNotif,   setShowNotif]  = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const { notifications, markRead, markAllRead } = useNotifications();
 
   const notifRef   = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -91,31 +97,39 @@ export function Header({ title, subtitle }: HeaderProps) {
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                 <span className="font-semibold text-sm text-slate-800">Notifikasi</span>
                 <button
-                  onClick={() => setNotifs((p) => p.map((n) => ({ ...n, unread: false })))}
+                  onClick={markAllRead}
                   className="text-xs text-primary-600 hover:underline font-medium"
                 >
                   Tandai semua dibaca
                 </button>
               </div>
               <div className="max-h-72 overflow-y-auto divide-y divide-slate-50">
-                {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    onClick={() => setNotifs((p) => p.map((x) => x.id === n.id ? { ...x, unread: false } : x))}
-                    className={`px-4 py-3 flex gap-3 cursor-pointer hover:bg-slate-50 transition-colors ${n.unread ? "bg-primary-50/40" : ""}`}
-                  >
-                    <span className="text-xl leading-none mt-0.5">{n.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm text-slate-800 truncate ${n.unread ? "font-semibold" : "font-medium"}`}>{n.title}</p>
-                      <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">{n.body}</p>
-                      <p className="text-[10px] text-slate-400 mt-1">{n.time}</p>
-                    </div>
-                    {n.unread && <span className="w-2 h-2 bg-primary-500 rounded-full mt-1.5 flex-shrink-0" />}
+                {notifications.length === 0 ? (
+                  <div className="py-10 text-center text-slate-400 text-sm">
+                    Belum ada notifikasi.
                   </div>
-                ))}
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => markRead(n.id)}
+                      className={`px-4 py-3 flex gap-3 cursor-pointer hover:bg-slate-50 transition-colors ${n.unread ? "bg-primary-50/40" : ""}`}
+                    >
+                      <span className="text-xl leading-none mt-0.5">{n.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm text-slate-800 truncate ${n.unread ? "font-semibold" : "font-medium"}`}>{n.title}</p>
+                        <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">{n.body}</p>
+                        <p className="text-[10px] text-slate-400 mt-1">{relativeTime(n.createdAt)}</p>
+                      </div>
+                      {n.unread && <span className="w-2 h-2 bg-primary-500 rounded-full mt-1.5 flex-shrink-0" />}
+                    </div>
+                  ))
+                )}
               </div>
               <div className="px-4 py-2 border-t border-slate-100 text-center">
-                <span className="text-xs text-slate-400">Semua notifikasi ditampilkan</span>
+                <span className="text-xs text-slate-400">
+                  {notifications.length > 0 ? `${notifications.length} notifikasi` : "Tidak ada notifikasi"}
+                </span>
               </div>
             </div>
           )}
