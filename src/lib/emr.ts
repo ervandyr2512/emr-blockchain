@@ -209,9 +209,9 @@ export async function getLatestSOAP(emrId: string): Promise<SOAPNote | null> {
 export async function getAllSOAPNotes(emrId: string): Promise<SOAPNote[]> {
   const snap = await get(ref(db, `soap_notes/${emrId}`));
   if (!snap.exists()) return [];
-  return Object.values(snap.val() as Record<string, SOAPNote>).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  return Object.entries(snap.val() as Record<string, SOAPNote>)
+    .map(([key, note]) => ({ ...note, id: key }))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 // ── Doctor Notes ─────────────────────────────────────────────────────────────
@@ -239,9 +239,9 @@ export async function getLatestDoctorNote(emrId: string): Promise<DoctorNote | n
 export async function getAllDoctorNotes(emrId: string): Promise<DoctorNote[]> {
   const snap = await get(ref(db, `doctor_notes/${emrId}`));
   if (!snap.exists()) return [];
-  return Object.values(snap.val() as Record<string, DoctorNote>).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  return Object.entries(snap.val() as Record<string, DoctorNote>)
+    .map(([key, note]) => ({ ...note, id: key }))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 // ── Prescriptions ────────────────────────────────────────────────────────────
@@ -257,9 +257,9 @@ export async function getPrescriptionsByEmrId(emrId: string): Promise<Prescripti
   try {
     const snap = await get(ref(db, `prescriptions/${emrId}`));
     if (!snap.exists()) return [];
-    return Object.values(snap.val() as Record<string, Prescription>).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+    return Object.entries(snap.val() as Record<string, Prescription>)
+      .map(([key, rx]) => ({ ...rx, id: key }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (err) {
     console.warn("[getPrescriptionsByEmrId]", err);
     return [];
