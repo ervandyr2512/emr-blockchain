@@ -324,13 +324,14 @@ export async function getPendingPrescriptions(): Promise<Prescription[]> {
   const all: Prescription[] = [];
   const data = snap.val() as Record<string, Record<string, Prescription>>;
   Object.values(data).forEach((byPatient) => {
-    Object.values(byPatient).forEach((rx) => {
+    // Use Object.entries to preserve Firebase push key as the prescription id
+    Object.entries(byPatient).forEach(([key, rx]) => {
       if (rx.status === "pending" || rx.status === "processing") {
-        all.push(rx);
+        all.push({ ...rx, id: key });
       }
     });
   });
-  return all;
+  return all.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 }
 
 export async function updatePrescriptionStatus(

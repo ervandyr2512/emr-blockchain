@@ -3,12 +3,16 @@
 export const dynamic = "force-dynamic";
 
 /**
- * Pharmacist Dashboard — Manage incoming prescriptions.
+ * Pharmacist Dashboard — Stats overview + prescription queue.
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import toast from "react-hot-toast";
-import { Pill, CheckCircle2, Clock, Link as LinkIcon } from "lucide-react";
+import {
+  Pill, CheckCircle2, Clock, Link as LinkIcon,
+  ShieldCheck, AlertCircle, ArrowRight,
+} from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { StatCard, Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -16,36 +20,62 @@ import { StatusBadge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { Modal } from "@/components/ui/Modal";
 import { useAuth } from "@/hooks/useAuth";
-import { getPendingPrescriptions, updatePrescriptionStatus } from "@/lib/emr";
+import {
+  getPendingPrescriptions, updatePrescriptionStatus, getPatient,
+} from "@/lib/emr";
 import { blockchainFulfillPrescriptionFull, extractErrorMessage } from "@/lib/blockchain";
 import { createNotification } from "@/lib/notifications";
 import { sha256 } from "@/lib/hash";
-import type { Prescription } from "@/types";
+import type { Prescription, Patient } from "@/types";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
 export default function PharmacistDashboard() {
-  const { profile }               = useAuth();
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [selected, setSelected]   = useState<Prescription | null>(null);
-  const [dispensing, setDispensing] = useState(false);
-  const [txHash, setTxHash]       = useState("");
+  const { profile } = useAuth();
 
-  const load = () => {
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [loading,       setLoading]       = useState(true);
+  const [selected,      setSelected]      = useState<Prescription | null>(null);
+  const [selPatient,    setSelPatient]    = useState<Patient | null>(null);
+  const [loadingPt,     setLoadingPt]     = useState(false);
+  const [dispensing,    setDispensing]    = useState(false);
+  const [txHash,        setTxHash]        = useState("");
+
+  const load = useCallback(() => {
     setLoading(true);
     getPendingPrescriptions()
-      .then((p) => setPrescriptions(p))
+      .then(setPrescriptions)
       .catch((err) => console.error("[PharmacistDashboard]", err))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(load, [load]);
+
+  /** Open modal — also fetch patient identity for safety verification */
+  const handleSelect = async (rx: Prescription) => {
+    setSelected(rx);
+    setSelPatient(null);
+    setTxHash("");
+    setLoadingPt(true);
+    try {
+      const pt = await getPatient(rx.emrId);
+      setSelPatient(pt);
+    } catch {
+      // non-fatal
+    } finally {
+      setLoadingPt(false);
+    }
   };
-  useEffect(load, []);
 
   const dispense = async () => {
     if (!selected || !profile) return;
     setDispensing(true);
     try {
-      const dataHash = await sha256({ ...selected, dispensedBy: profile.uid, timestamp: new Date().toISOString() });
+      const dataHash = await sha256({
+        ...selected,
+        dispensedBy: profile.uid,
+        timestamp:   new Date().toISOString(),
+      });
 
       let hash = "";
       const bcToastId = toast.loading("Memulai transaksi blockchain…");
@@ -59,20 +89,20 @@ export default function PharmacistDashboard() {
         toast.success("Resep berhasil direkam di blockchain! ✅", { id: bcToastId });
       } catch (bcErr: unknown) {
         console.error("[Blockchain Rx]", bcErr);
-        const errMsg = extractErrorMessage(bcErr);
-        toast.error(`⚠️ Blockchain gagal: ${errMsg}`, { id: bcToastId, duration: 12000 });
+        toast.error(`⚠️ Blockchain gagal: ${extractErrorMessage(bcErr)}`, {
+          id: bcToastId, duration: 12000,
+        });
       }
 
       await updatePrescriptionStatus(
         selected.emrId, selected.id, "dispensed",
-        profile.uid, profile.name, hash
+        profile.uid, profile.name, hash || undefined
       );
 
-      // ── Push live notification ────────────────────────────────────────────
       await createNotification({
         icon:        "💊",
         title:       "Resep Diserahkan",
-        body:        `Apoteker ${profile.name} menyerahkan resep EMR ${selected.emrId}${hash ? " · Direkam di blockchain ✅" : ""}`,
+        body:        `Apoteker ${profile.name} menyerahkan resep ${selected.emrId}${hash ? " · Direkam di blockchain ✅" : ""}`,
         createdAt:   new Date().toISOString(),
         unread:      true,
         targetRoles: ["doctor", "admin"],
@@ -80,7 +110,10 @@ export default function PharmacistDashboard() {
         txHash:      hash || undefined,
       }).catch(() => {});
 
-      toast.success(`Resep untuk ${selected.emrId} berhasil diserahkan!`);
+      const patientName = selPatient
+        ? `${selPatient.firstName} ${selPatient.lastName}`
+        : selected.emrId;
+      toast.success(`Resep untuk ${patientName} berhasil diserahkan!`);
       setSelected(null);
       load();
     } catch (err: unknown) {
@@ -90,7 +123,7 @@ export default function PharmacistDashboard() {
     }
   };
 
-  const pending  = prescriptions.filter((p) => p.status === "pending").length;
+  const pending    = prescriptions.filter((p) => p.status === "pending").length;
   const processing = prescriptions.filter((p) => p.status === "processing").length;
 
   return (
@@ -106,7 +139,14 @@ export default function PharmacistDashboard() {
         </div>
 
         <Card>
-          <h3 className="font-bold text-slate-800 mb-4">📋 Daftar Resep Masuk</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-slate-800">📋 Resep Masuk Terkini</h3>
+            <Link href="/pharmacist/prescriptions">
+              <Button variant="outline" size="sm" icon={<ArrowRight className="w-3.5 h-3.5" />}>
+                Lihat Semua
+              </Button>
+            </Link>
+          </div>
           {loading ? <Spinner center /> : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -118,8 +158,8 @@ export default function PharmacistDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {prescriptions.map((rx, i) => (
-                    <tr key={i} className="hover:bg-slate-50">
+                  {prescriptions.slice(0, 5).map((rx) => (
+                    <tr key={rx.id} className="hover:bg-slate-50">
                       <td className="py-3 px-4">
                         <span className="font-mono text-xs bg-primary-50 text-primary-700 px-2 py-0.5 rounded-lg">{rx.emrId}</span>
                       </td>
@@ -139,7 +179,8 @@ export default function PharmacistDashboard() {
                         {format(new Date(rx.createdAt), "dd MMM HH:mm", { locale: localeId })}
                       </td>
                       <td className="py-3 px-4">
-                        <Button size="sm" icon={<CheckCircle2 className="w-4 h-4" />} onClick={() => setSelected(rx)}>
+                        <Button size="sm" icon={<CheckCircle2 className="w-4 h-4" />}
+                          onClick={() => handleSelect(rx)}>
                           Proses
                         </Button>
                       </td>
@@ -157,56 +198,115 @@ export default function PharmacistDashboard() {
         </Card>
       </div>
 
-      {/* Dispense Modal */}
+      {/* ── Dispense Modal ───────────────────────────────────────────────────── */}
       <Modal
         open={!!selected}
-        onClose={() => setSelected(null)}
-        title="Proses & Serahkan Resep"
+        onClose={() => { setSelected(null); setTxHash(""); }}
+        title="Verifikasi &amp; Serahkan Resep"
         size="lg"
         footer={
           <>
-            <Button variant="outline" onClick={() => setSelected(null)}>Batal</Button>
-            <Button onClick={dispense} loading={dispensing} variant="secondary">
-              Tandai Diserahkan & Rekam Blockchain
+            <Button variant="outline" onClick={() => { setSelected(null); setTxHash(""); }}>Batal</Button>
+            <Button onClick={dispense} loading={dispensing} variant="secondary"
+              icon={<CheckCircle2 className="w-4 h-4" />}>
+              Obat Telah Diserahkan &amp; Rekam Blockchain
             </Button>
           </>
         }
       >
         {selected && (
           <div className="space-y-4">
-            <div className="bg-slate-50 rounded-xl p-4 text-sm space-y-1">
-              <p><b>EMR ID:</b> {selected.emrId}</p>
-              <p><b>Dokter:</b> {selected.doctorName}</p>
-              <p><b>Dibuat:</b> {format(new Date(selected.createdAt), "dd MMM yyyy HH:mm", { locale: localeId })}</p>
+
+            {/* Patient identity — safety check */}
+            <div className="rounded-xl border-2 border-amber-300 bg-amber-50 overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-100 border-b border-amber-200">
+                <ShieldCheck className="w-4 h-4 text-amber-600" />
+                <span className="text-xs font-bold text-amber-800 uppercase tracking-wide">
+                  Verifikasi Identitas Pasien
+                </span>
+              </div>
+              {loadingPt ? (
+                <div className="px-4 py-4 flex items-center gap-2 text-sm text-slate-500">
+                  <Spinner /> Memuat data pasien…
+                </div>
+              ) : selPatient ? (
+                <div className="px-4 py-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                  <div>
+                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Nama Pasien</p>
+                    <p className="font-bold text-slate-800 text-base">
+                      {selPatient.firstName} {selPatient.lastName}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">EMR ID</p>
+                    <p className="font-mono font-semibold text-primary-700">{selPatient.emrId}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">No. KTP</p>
+                    <p className="font-mono text-slate-700">{selPatient.ktpNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Jenis Kelamin</p>
+                    <p className="text-slate-700">{selPatient.gender}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">No. Telepon</p>
+                    <p className="text-slate-700">{selPatient.phone}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Poli</p>
+                    <p className="text-slate-700">{selPatient.department ?? "—"}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="px-4 py-3 flex items-center gap-2 text-sm text-slate-500">
+                  <AlertCircle className="w-4 h-4 text-amber-400" />
+                  Data pasien tidak ditemukan untuk EMR {selected.emrId}
+                </div>
+              )}
             </div>
+
+            {/* Prescription meta */}
+            <div className="bg-slate-50 rounded-xl p-4 text-sm space-y-1">
+              <p><b className="text-slate-600">Dokter:</b> {selected.doctorName}</p>
+              <p><b className="text-slate-600">Dibuat:</b>{" "}
+                {format(new Date(selected.createdAt), "dd MMM yyyy · HH:mm", { locale: localeId })}
+              </p>
+            </div>
+
+            {/* Medications table */}
             <div>
               <p className="text-sm font-bold text-slate-700 mb-2">Daftar Obat:</p>
-              <table className="w-full text-sm border border-slate-100 rounded-xl overflow-hidden">
-                <thead className="bg-slate-50">
-                  <tr>
-                    {["Nama Obat", "Dosis", "Frekuensi", "Durasi"].map(h => (
-                      <th key={h} className="text-left py-2 px-3 text-xs font-semibold text-slate-500">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {selected.medications.map((m, i) => (
-                    <tr key={i} className="border-t border-slate-100">
-                      <td className="py-2 px-3 font-medium">{m.name}</td>
-                      <td className="py-2 px-3 text-slate-600">{m.dose}</td>
-                      <td className="py-2 px-3 text-slate-600">{m.frequency}</td>
-                      <td className="py-2 px-3 text-slate-600">{m.duration}</td>
+              <div className="overflow-x-auto rounded-xl border border-slate-100">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      {["Nama Obat", "Dosis", "Frekuensi", "Durasi", "Catatan"].map(h => (
+                        <th key={h} className="text-left py-2 px-3 text-xs font-semibold text-slate-500">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {selected.medications.map((m, i) => (
+                      <tr key={i} className="border-t border-slate-100">
+                        <td className="py-2 px-3 font-medium text-slate-800">{m.name}</td>
+                        <td className="py-2 px-3 text-slate-600">{m.dose}</td>
+                        <td className="py-2 px-3 text-slate-600">{m.frequency}</td>
+                        <td className="py-2 px-3 text-slate-600">{m.duration}</td>
+                        <td className="py-2 px-3 text-slate-400">{m.notes ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
+
             {txHash && (
-              <div className="bg-green-50 rounded-xl p-3 border border-green-100">
-                <p className="text-xs font-semibold text-green-700 flex items-center gap-1 mb-1">
-                  <LinkIcon className="w-3.5 h-3.5" /> TX Blockchain
+              <div className="bg-green-50 rounded-xl p-3 border border-green-200">
+                <p className="text-xs font-semibold text-green-700 flex items-center gap-1.5 mb-1">
+                  <LinkIcon className="w-3.5 h-3.5" /> Transaksi Blockchain Berhasil
                 </p>
-                <p className="hash-text text-green-600">{txHash}</p>
+                <p className="hash-text text-green-600 text-[11px]">{txHash}</p>
               </div>
             )}
           </div>
