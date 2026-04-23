@@ -76,7 +76,15 @@ const RX_STATUS_LABEL: Record<string, { label: string; color: string }> = {
 // ── SOAP history card ─────────────────────────────────────────────────────────
 
 export function SOAPHistoryCard({ notes }: { notes: SOAPNote[] }) {
-  const [expandedId, setExpandedId] = useState<string | null>(notes[0]?.id ?? null);
+  const [openIds, setOpenIds] = useState<Set<string>>(
+    () => new Set(notes[0]?.id ? [notes[0].id] : [])
+  );
+  const toggle = (id: string) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   if (notes.length === 0) return null;
 
   return (
@@ -89,12 +97,12 @@ export function SOAPHistoryCard({ notes }: { notes: SOAPNote[] }) {
 
       <div className="divide-y divide-slate-100">
         {notes.map((n) => {
-          const open = expandedId === n.id;
+          const open = openIds.has(n.id);
           return (
             <div key={n.id} className={open ? "bg-amber-50/40" : "bg-white"}>
               <button
                 type="button"
-                onClick={() => setExpandedId(open ? null : n.id)}
+                onClick={() => toggle(n.id)}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-amber-50/60 transition-colors"
               >
                 <div className="flex-1 min-w-0">
@@ -140,7 +148,15 @@ export function SOAPHistoryCard({ notes }: { notes: SOAPNote[] }) {
 // ── Doctor notes history card ─────────────────────────────────────────────────
 
 export function DoctorHistoryCard({ notes }: { notes: DoctorNote[] }) {
-  const [expandedId, setExpandedId] = useState<string | null>(notes[0]?.id ?? null);
+  const [openIds, setOpenIds] = useState<Set<string>>(
+    () => new Set(notes[0]?.id ? [notes[0].id] : [])
+  );
+  const toggle = (id: string) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   if (notes.length === 0) return null;
 
   return (
@@ -153,12 +169,12 @@ export function DoctorHistoryCard({ notes }: { notes: DoctorNote[] }) {
 
       <div className="divide-y divide-slate-100">
         {notes.map((n) => {
-          const open = expandedId === n.id;
+          const open = openIds.has(n.id);
           return (
             <div key={n.id} className={open ? "bg-primary-50/30" : "bg-white"}>
               <button
                 type="button"
-                onClick={() => setExpandedId(open ? null : n.id)}
+                onClick={() => toggle(n.id)}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-primary-50/50 transition-colors"
               >
                 <div className="flex-1 min-w-0">
@@ -258,7 +274,15 @@ export function DoctorHistoryCard({ notes }: { notes: DoctorNote[] }) {
 // ── Prescription history card ─────────────────────────────────────────────────
 
 export function PrescriptionHistoryCard({ prescriptions }: { prescriptions: Prescription[] }) {
-  const [expandedId, setExpandedId] = useState<string | null>(prescriptions[0]?.id ?? null);
+  const [openIds, setOpenIds] = useState<Set<string>>(
+    () => new Set(prescriptions[0]?.id ? [prescriptions[0].id] : [])
+  );
+  const toggle = (id: string) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   if (prescriptions.length === 0) return null;
 
   return (
@@ -271,13 +295,13 @@ export function PrescriptionHistoryCard({ prescriptions }: { prescriptions: Pres
 
       <div className="divide-y divide-slate-100">
         {prescriptions.map((rx) => {
-          const open = expandedId === rx.id;
+          const open = openIds.has(rx.id);
           const statusCfg = RX_STATUS_LABEL[rx.status] ?? { label: rx.status, color: "bg-slate-100 text-slate-600" };
           return (
             <div key={rx.id} className={open ? "bg-teal-50/30" : "bg-white"}>
               <button
                 type="button"
-                onClick={() => setExpandedId(open ? null : rx.id)}
+                onClick={() => toggle(rx.id)}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-teal-50/50 transition-colors"
               >
                 <div className="flex-1 min-w-0">
